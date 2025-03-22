@@ -1,13 +1,15 @@
 import React from "react";
 
-export default function Sidebar({ darkMode, isGeneral, setIsGeneral }) {
+export default function Sidebar({ darkMode, userInfoType, setUserInfoType }) {
     return (
         <div className={`h-screen w-64 fixed top-0 mt-18 left-0 p-6 transition-colors duration-300 shadow-lg ${darkMode ? "bg-gray-900 text-white shadow-gray-800" : "bg-white text-gray-900 shadow-gray-400"}`}>
             <h1 className="text-2xl font-bold mb-6 text-center">Dashboard</h1>
             
             <nav className="space-y-4">
-                <SidebarButton label="General" onClick={() => setIsGeneral(true)} darkMode={darkMode} isActive={isGeneral} />
-                <SidebarButton label="History" onClick={() => setIsGeneral(false)} darkMode={darkMode} isActive={!isGeneral} />
+                <SidebarButton label="Profile" onClick={() => setUserInfoType('details')} darkMode={darkMode} isActive={userInfoType === 'details'} />
+                <SidebarButton label="General" onClick={() => setUserInfoType('general')} darkMode={darkMode} isActive={userInfoType === 'general'} />
+                <SidebarButton label="History" onClick={() => setUserInfoType('history')} darkMode={darkMode} isActive={userInfoType === 'history'} />
+                <SidebarButton label="Analytics" onClick={() => setUserInfoType('analytics')} darkMode={darkMode} isActive={userInfoType === 'analytics'} />
             </nav>
         </div>
     );
