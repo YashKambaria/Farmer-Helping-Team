@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import General from "./General";
 import History from "./History";
+import Details from "./Details";
+import Analytics from "./Analytics";
 
 export default function Profile({ darkMode }) {
-  const [isGeneral, setIsGeneral] = useState(true);
+  const [userInfoType, setUserInfoType] = useState('profile');
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
@@ -38,14 +40,22 @@ export default function Profile({ darkMode }) {
     >
       {/* Sidebar */}
       <div className="w-64 hidden md:block">
-        <Sidebar darkMode={darkMode} isGeneral={isGeneral} setIsGeneral={setIsGeneral} />
+        <Sidebar darkMode={darkMode} userInfoType={userInfoType} setUserInfoType={setUserInfoType} />
       </div>
 
-      {isGeneral ? (
+      {userInfoType === 'general' ? (
         <General darkMode={darkMode} userData={userData} />
-      ) : (
+      ) : userInfoType === 'history' ? (
         // Pass the history array if available, or an empty array otherwise
         <History darkMode={darkMode} historyData={userData ? userData.history : []} />
+      ) : userInfoType === 'details' ? (
+        <>
+            <Details darkMode={darkMode} userData={userData} />
+        </>
+      ) : (
+        <>
+          <Analytics darkMode={darkMode}/>
+        </>
       )}
     </div>
   );

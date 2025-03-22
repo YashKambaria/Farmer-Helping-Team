@@ -8,6 +8,7 @@ import { AuthProvider } from "./AuthContext";
 import Profile from "./Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import Signup from "./Signup";
+import Farmer from "./Farmer";
 
 export default function App() {
     const [darkMode, setDarkMode] = useState(false);
@@ -32,10 +33,18 @@ export default function App() {
                                         path="/service"
                                         element={<ProtectedRoute><Service darkMode={darkMode} /></ProtectedRoute>}
                                     />
+                                    <Route
+                                        path="/farmer"
+                                        element={<ProtectedRoute><Farmer darkMode={darkMode} /></ProtectedRoute>}
+                                    />
 
                                     {/* Protected Profile Route */}
                                     <Route 
                                         path="/profile" 
+                                        element={<ProtectedRoute><Profile darkMode={darkMode} /></ProtectedRoute>} 
+                                    />
+                                    <Route 
+                                        path="/chatai" 
                                         element={<ProtectedRoute><Profile darkMode={darkMode} /></ProtectedRoute>} 
                                     />
 
