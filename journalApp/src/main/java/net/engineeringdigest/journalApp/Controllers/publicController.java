@@ -58,8 +58,8 @@ public class publicController {
 	@PostMapping("/login")
 	public  ResponseEntity<String> login(@RequestBody UserEntity user) {
 		try {
-			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
-			UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword()));
+			UserDetails userDetails = userDetailsService.loadUserByUsername(user.getName());
 			String jwt=jwtUtil.generateToken(userDetails.getUsername());
 			return new ResponseEntity<>(jwt, HttpStatus.OK);
 		} catch (Exception e) {
@@ -70,8 +70,8 @@ public class publicController {
 	@PostMapping("/refresh-token")
 	public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
 		String username = request.get("username");
-		UserEntity user= userRepository.findByUsername(username);
-		UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
+		UserEntity user= userRepository.findByName(username);
+		UserDetails userDetails = userDetailsService.loadUserByUsername(user.getName());
 		String jwt=jwtUtil.generateToken(userDetails.getUsername());
 		return ResponseEntity.ok(jwt);
 	}

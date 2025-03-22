@@ -3,7 +3,6 @@ package net.engineeringdigest.journalApp.Services;
 
 import lombok.extern.slf4j.Slf4j;
 import net.engineeringdigest.journalApp.Entities.UserEntity;
-import net.engineeringdigest.journalApp.Entities.Vehicle;
 import net.engineeringdigest.journalApp.Repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 
 @Slf4j
@@ -51,7 +49,7 @@ public class UserService {
 	
 	// Validate user details before saving
 	public String validateUser(UserEntity user) {
-		if (userRepository.existsByUsername(user.getUsername())) {
+		if (userRepository.existsByName(user.getName())) {
 			return "Username is already taken!";
 		}
 		if (userRepository.existsByEmail(user.getEmail())) {
@@ -64,14 +62,14 @@ public class UserService {
 	}
 	
 	public void deleteByUserName(String name) {
-		userRepository.deleteByUsername(name);
+		userRepository.deleteByName(name);
 	}
 	
 	
 	public void updateUser(UserEntity updatedUser, UserEntity existingUser) {
 		try{
-				if(updatedUser.getUsername()!=null && !updatedUser.getUsername().equals(existingUser.getUsername())){
-					existingUser.setUsername(updatedUser.getUsername());
+				if(updatedUser.getName()!=null && !updatedUser.getName().equals(existingUser.getName())){
+					existingUser.setName(updatedUser.getName());
 				}
 				if(updatedUser.getPhoneNo()!=null && !updatedUser.getPhoneNo().equals(existingUser.getPhoneNo())){
 					existingUser.setPhoneNo(updatedUser.getPhoneNo());
@@ -95,9 +93,4 @@ public class UserService {
 		}
 	}
 	
-	public void addVehicle(UserEntity user, Vehicle vehicle) {
-		List<Vehicle> vehicles = user.getVehicles();
-		vehicles.add(vehicle);
-		saveEntry(user);
-	}
 }

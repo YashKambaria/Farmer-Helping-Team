@@ -11,13 +11,11 @@ import java.util.Optional;
 
 public interface UserRepository extends MongoRepository<UserEntity, ObjectId>{
 	UserEntity findUserByPhoneNo(String phoneNo);
-	@Query("{ 'vehicles.plateNo': ?0 }")
-	Optional<UserEntity> findByPlateNo(String plateNo);
 	UserEntity findUserByEmail(String email);
-	UserEntity findByUsername(String username);
-	boolean existsByUsername(String username);
-	boolean existsByEmail(String email);
+	UserEntity findByName(String name);
+	boolean existsByName(String username);
+	boolean existsByEmail(String name);
 	boolean existsByPhoneNo(String phoneNo);
-	void deleteByUsername(String username);
+	void deleteByName(String name);
 	
 }

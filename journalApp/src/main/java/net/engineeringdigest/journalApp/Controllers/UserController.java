@@ -2,10 +2,11 @@ package net.engineeringdigest.journalApp.Controllers;
 
 
 import lombok.extern.slf4j.Slf4j;
+import net.engineeringdigest.journalApp.Entities.OtpValidate;
 import net.engineeringdigest.journalApp.Entities.UserEntity;
-import net.engineeringdigest.journalApp.Entities.Vehicle;
 import net.engineeringdigest.journalApp.Repositories.UserRepository;
 import net.engineeringdigest.journalApp.Services.EmailService;
+import net.engineeringdigest.journalApp.Services.OtpService;
 import net.engineeringdigest.journalApp.Services.UserService;
 import net.engineeringdigest.journalApp.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 @RestController
@@ -35,6 +37,9 @@ public class UserController {
 	@Autowired
 	public JwtUtil jwtUtil;
 	
+	@Autowired
+	public OtpService otpService;
+	
 	
 	//CRUD OPERATIOM FOR USER
 	@GetMapping("/getUser")
@@ -42,7 +47,7 @@ public class UserController {
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			String name = authentication.getName();
-			UserEntity user = userRepository.findByUsername(name);
+			UserEntity user = userRepository.findByName(name);
 			return new ResponseEntity<>(user, HttpStatus.OK);
 		}
 		catch (Exception e){
@@ -56,7 +61,7 @@ public class UserController {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 			String loggedInUsername = authentication.getName();
 			
-			UserEntity existingUser = userRepository.findByUsername(loggedInUsername);
+			UserEntity existingUser = userRepository.findByName(loggedInUsername);
 			if (existingUser == null) {
 				return new ResponseEntity<>("User Not Found", HttpStatus.NOT_FOUND);
 			}
@@ -68,52 +73,13 @@ public class UserController {
 			return new ResponseEntity<>("Error while updating User. Please Try Again Later", HttpStatus.UNAUTHORIZED);
 		}
 	}
-	@PostMapping("/deleteVehicle")
-	public ResponseEntity<?> deleteVehicle(@RequestBody Vehicle vehicle){
-		try {
-			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			UserEntity user = userRepository.findByUsername(authentication.getName());
-			if (user != null) {
-				List<Vehicle> vehicles = user.getVehicles();
-				vehicles.remove(vehicle);
-				userService.saveEntry(user);
-				return new ResponseEntity<>(HttpStatus.OK);
-			}
-			else {
-				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-			}
-		}
-		catch (Exception e){
-			log.error("error while deleting vehicle ----------->",e);
-			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-		}
-	}
 	
-	
-	@PostMapping("/addVehicles")
-	public ResponseEntity<?> addVehicles(@RequestBody Vehicle vehicle){
-		try {
-			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			UserEntity user = userRepository.findByUsername(authentication.getName());
-			if (user != null) {
-				userService.addVehicle(user,vehicle);
-				return new ResponseEntity<>(HttpStatus.OK);
-			} else {
-				log.error("error while adding vehicle");
-				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-			}
-		}
-		catch (Exception e) {
-			log.error("error while adding vehicle", e);
-			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-		}
-	}
 	
 	@DeleteMapping("/deleteUser")
 	public ResponseEntity<?> deleteUser(){
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-			if (userRepository.findByUsername(authentication.getName())!=null) {
+			if (userRepository.findByName(authentication.getName())!=null) {
 				userService.deleteByUserName(authentication.getName());
 				return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 			} else {
@@ -125,6 +91,114 @@ public class UserController {
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
 	}
+	
+	//USER Verification started
+	@GetMapping("/sendOTPEmail")
+	public ResponseEntity<?> generateOTP(){
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			String username = authentication.getName();
+			UserEntity user = userRepository.findByName(username);
+			if (user != null) {
+				boolean otpSend = otpService.EmailOTP(user);
+				if (otpSend) {
+					return new ResponseEntity<>("OTP sent", HttpStatus.OK);
+				}
+				else{
+					return new ResponseEntity<>("Error while Generating OTP ",HttpStatus.BAD_REQUEST);
+				}
+			}
+			else {
+				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+			}
+		}
+		catch (Exception e){
+			log.error("error while generating otp",e);
+			return new ResponseEntity<>("Something went wrong please try again ",HttpStatus.BAD_REQUEST);
+		}
+	}
+	@GetMapping("/sendOTPPhone")
+	public ResponseEntity<?> generateOTPPhone(){
+		try {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			String username = authentication.getName();
+			UserEntity user = userRepository.findByName(username);
+			if (user != null) {
+				boolean otpSend = otpService.PhoneOTP(user);
+				if (otpSend) {
+					return new ResponseEntity<>("OTP sent", HttpStatus.OK);
+				}
+				else{
+					return new ResponseEntity<>("Error while Generating OTP ",HttpStatus.BAD_REQUEST);
+				}
+			}
+			else {
+				return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+			}
+		}
+		catch (Exception e){
+			log.error("error while generating otp",e);
+			return new ResponseEntity<>("Something went wrong please try again ",HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	
+	@PostMapping("/verifyEmail")
+	public ResponseEntity<?> verifyEmail(@RequestBody OtpValidate otpValidate){
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String username = authentication.getName();
+		UserEntity user = userRepository.findByName(username);
+		
+		if (user != null && otpValidate.getOtp()!= null) {
+			Instant now = Instant.now();
+			if(user.getOTP().equals(otpValidate.getOtp())){
+				if (now.isBefore(user.getOtpExpiryTime())) {
+					user.setOTP(null);
+					user.setEmailVerified(true);
+					userRepository.save(user);
+					return new ResponseEntity<>("Email verified successfully ", HttpStatus.ACCEPTED);
+				}
+				else {
+					return new ResponseEntity<>("OTP is expired please Regenerate it",HttpStatus.EXPECTATION_FAILED);
+				}
+			}
+			else {
+				return new ResponseEntity<>("Invalid OTP ", HttpStatus.BAD_REQUEST);
+			}
+		}
+		else {
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+	}
+	
+	@PostMapping("/verifyPhone")
+	public ResponseEntity<?> verifyPhone(@RequestBody OtpValidate otpValidate){
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String username = authentication.getName();
+		UserEntity user = userRepository.findByName(username);
+		
+		if (user != null && otpValidate.getOtp()!= null && user.getOTP()!=null) {
+			Instant now = Instant.now();
+			if(user.getOTP().equals(otpValidate.getOtp())){
+				if (now.isBefore(user.getOtpExpiryTime())) {
+					user.setOTP(null);
+					user.setPhoneVerified(true);
+					userRepository.save(user);
+					return new ResponseEntity<>("Phone Number verified succesfully ", HttpStatus.ACCEPTED);
+				}
+				else {
+					return new ResponseEntity<>("OTP is expired please Regenerate it",HttpStatus.EXPECTATION_FAILED);
+				}
+			}
+			else {
+				return new ResponseEntity<>("Invalid OTP ", HttpStatus.BAD_REQUEST);
+			}
+		}
+		else {
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+	}
+	//USER Verification ended
 	
 	
 }

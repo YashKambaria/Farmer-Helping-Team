@@ -7,7 +7,7 @@ spring:
   data:
     mongodb:
       uri: ${MONGO_URI}
-      database: PK_Users
+      database: DivineCoders
   application:
     name: Backend
   mail:
@@ -21,6 +21,9 @@ spring:
           auth: true
           starttls:
             enable: true
-
+Twilio:
+  SID: ${SID}
+  ID: ${ID}
+  NUMBER: ${NUMBER}
 Jwt:
   KEY: ${KEY}

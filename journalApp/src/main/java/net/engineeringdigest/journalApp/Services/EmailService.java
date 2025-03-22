@@ -32,18 +32,12 @@ public class EmailService {
 	
 	public void sendAlert(UserEntity vehicleOwner, ParkingIssueRequest request) {
 		String subject = "⚠️ Parking Violation Alert!";
-		String message = "Dear " + vehicleOwner.getUsername() + ",\n\n" +
-				"Your vehicle (Plate: " + request.getPlateNo() + ") has received "+vehicleOwner.getComplaintsCount()+" complaints for improper parking. " +
-				"Please ensure you follow parking rules to avoid further action.\n\n" +
-				"Thank you.";
+		String message = "";
 		sendEmail(vehicleOwner.getEmail(), subject, message);
 	}
 	public void sendAlert(UserEntity vehicleOwner, String request) {
 		String subject = "⚠️ Parking Violation Alert!";
-		String message = "Dear " + vehicleOwner.getUsername() + ",\n\n" +
-				"Your vehicle (Plate: " + request + ") has received "+vehicleOwner.getComplaintsCount()+" complaints for improper parking. " +
-				"Please ensure you follow parking rules to avoid further action.\n\n" +
-				"Thank you.";
+		String message ="";
 		sendEmail(vehicleOwner.getEmail(), subject, message);
 	}
 	public void sendOTP(UserEntity vehicleOwner,String OTP){

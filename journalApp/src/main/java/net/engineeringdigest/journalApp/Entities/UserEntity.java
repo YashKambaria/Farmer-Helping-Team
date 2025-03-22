@@ -21,19 +21,32 @@ public class UserEntity {
 	@Id
 	private ObjectId id;
 	@NonNull
-	private String username;
+	private String name;
 	@NonNull
 	private String password;
-	@NonNull
-	private List<Vehicle> vehicles;
 	private String phoneNo;
 	@NonNull
 	private String email;
 	private List<String> roles;
 	private String OTP;
 	private Instant otpExpiryTime;
-	private int complaintsCount = 0;
-	private List<Complains> history=new ArrayList<>();
+//	private List<Complains> history=new ArrayList<>();
 	private boolean isEmailVerified;
 	private boolean isPhoneVerified;
+	
+	private String year;
+	private String country;
+	private String region;
+	private float landSize;
+	private String soilType;
+	private float pastYield;
+	private String cropTypes;
+	private long  annualIncome;
+	private float soilPH;
+	private int nitrogenLevel;
+	private int organicMatterLevel;
+	private int landQualityScore;
+	private float pastRainfall;
+	private float avgTemperature;
+	private float creditScore;
 }
