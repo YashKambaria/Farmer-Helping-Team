@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
+import axios from "axios";
 
 export default function Analytics({ darkMode }) {
   // Chart references
@@ -8,7 +9,12 @@ export default function Analytics({ darkMode }) {
   const climateDataRef = useRef(null);
   const performanceRef = useRef(null);
 
-  const farmerData = {
+  // Add state for loading and error
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Default farmer data
+  const [farmerData, setFarmerData] = useState({
     name: "Rajesh Patel",
     avatar: "/api/placeholder/150/150",
     year: 2025,
@@ -26,7 +32,55 @@ export default function Analytics({ darkMode }) {
     pastRainfall: 850,
     avgTemperature: 28.5,
     creditScore: 750
-  };
+  });
+
+  // Fetch user data from backend
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get the token from localStorage
+        const token = localStorage.getItem("token");
+        
+        if (!token) {
+          setError("Authentication token not found. Please login again.");
+          setLoading(false);
+          return;
+        }
+        
+        const response = await axios.get("http://localhost:8080/user/getUser", {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        // Get user data from response
+        const userData = response.data;
+        
+        // Only update the farmerData if we have user data
+        if (userData) {
+          setFarmerData(prevData => ({
+            ...prevData,
+            name: userData.name || prevData.name,
+            country: userData.country || prevData.country,
+            region: userData.region || prevData.region,
+            landSize: userData.landSize || prevData.landSize,
+            soilType: userData.soilType || prevData.soilType,
+            pastYield: userData.pastYield || prevData.pastYield,
+            cropTypes: userData.cropTypes ? userData.cropTypes.split(",").map(crop => crop.trim()) : prevData.cropTypes,
+            annualIncome: userData.annualIncome || prevData.annualIncome,
+            year: userData.year || prevData.year
+          }));
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError("Failed to load farmer data. Using default data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   // Assumed crop distribution (since we don't have exact percentages)
   const cropDistribution = [45, 35, 20]; // Wheat, Cotton, Chickpeas in percentages
@@ -39,6 +93,9 @@ export default function Analytics({ darkMode }) {
   };
 
   useEffect(() => {
+    // Don't initialize charts until loading is complete
+    if (loading) return;
+    
     // Theme colors based on dark mode
     const textColor = darkMode ? '#ffffff' : '#333333';
     const gridColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
@@ -183,147 +240,155 @@ export default function Analytics({ darkMode }) {
       climateChart.destroy();
       performanceChart.destroy();
     };
-  }, [darkMode]);
+  }, [darkMode, farmerData, loading]);
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex justify-center items-center ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
 
   return (
     <>
-        <div className={`min-h-screen w-300 ml-10 mt-16 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
+      <div className={`min-h-screen w-300 ml-10 mt-16 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
         {/* Farmer Profile Header */}
         <div className={`px-4 py-6 mb-6 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
-            <div className="container mx-auto">
+          <div className="container mx-auto">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-                <div className="flex-shrink-0">
+              <div className="flex-shrink-0">
                 <img
-                    src={farmerData.avatar}
-                    alt={farmerData.name}
-                    className="rounded-full h-24 w-24 object-cover border-2 border-gray-300"
+                  src={farmerData.avatar}
+                  alt={farmerData.name}
+                  className="rounded-full h-24 w-24 object-cover border-2 border-gray-300"
                 />
-                </div>
-                <div className="flex-grow">
+              </div>
+              <div className="flex-grow">
                 <h2 className="text-2xl font-bold">{farmerData.name}</h2>
                 <p className={`${darkMode ? "text-gray-400" : "text-gray-600"} mb-1`}>
-                    {farmerData.region}, {farmerData.country} • {farmerData.landSize} hectares
+                  {farmerData.region}, {farmerData.country} • {farmerData.landSize} hectares
                 </p>
                 <p>Soil Type: {farmerData.soilType}</p>
-                </div>
-                <div className="w-full md:w-72">
+              </div>
+              <div className="w-full md:w-72">
                 <div className="flex justify-between mb-1">
-                    <span className="font-medium">Credit Score</span>
-                    <span className="font-semibold">{farmerData.creditScore}/850</span>
+                  <span className="font-medium">Credit Score</span>
+                  <span className="font-semibold">{farmerData.creditScore}/850</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                    <div 
+                  <div 
                     className={`h-2.5 rounded-full ${
-                        farmerData.creditScore > 700 ? "bg-green-600" : 
-                        farmerData.creditScore > 600 ? "bg-yellow-500" : "bg-red-500"
+                      farmerData.creditScore > 700 ? "bg-green-600" : 
+                      farmerData.creditScore > 600 ? "bg-yellow-500" : "bg-red-500"
                     }`}
                     style={{ width: `${(farmerData.creditScore / 850) * 100}%` }}
-                    ></div>
+                  ></div>
                 </div>
-                </div>
+              </div>
             </div>
-            </div>
+          </div>
         </div>
 
         <div className="container mx-auto px-4">
-            {/* Key Metrics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* Key Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Annual Income</h3>
-                <p className="text-2xl font-bold mt-1">₹{farmerData.annualIncome.toLocaleString()}</p>
-                <p className="text-green-500 text-sm mt-2">+15% from last year</p>
-            </div>
-            <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Land Quality</h3>
-                <p className="text-2xl font-bold mt-1">{farmerData.landQualityScore}/10</p>
-                <p className="text-blue-500 text-sm mt-2">Above regional average</p>
+              <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Annual Income</h3>
+              <p className="text-2xl font-bold mt-1">₹{farmerData.annualIncome.toLocaleString()}</p>
+              <p className="text-green-500 text-sm mt-2">+15% from last year</p>
             </div>
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Past Yield</h3>
-                <p className="text-2xl font-bold mt-1">{farmerData.pastYield} kg/ha</p>
-                <p className="text-green-500 text-sm mt-2">+23% from expected</p>
+              <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Land Quality</h3>
+              <p className="text-2xl font-bold mt-1">{farmerData.landQualityScore}/10</p>
+              <p className="text-blue-500 text-sm mt-2">Above regional average</p>
             </div>
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Soil pH</h3>
-                <p className="text-2xl font-bold mt-1">{farmerData.soilPH}</p>
-                <p className="text-yellow-500 text-sm mt-2">Slightly acidic (ideal: 7.0)</p>
+              <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Past Yield</h3>
+              <p className="text-2xl font-bold mt-1">{farmerData.pastYield} kg/ha</p>
+              <p className="text-green-500 text-sm mt-2">+23% from expected</p>
             </div>
+            <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
+              <h3 className={`text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-500"}`}>Soil pH</h3>
+              <p className="text-2xl font-bold mt-1">{farmerData.soilPH}</p>
+              <p className="text-yellow-500 text-sm mt-2">Slightly acidic (ideal: 7.0)</p>
             </div>
+          </div>
 
-            {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Charts Row 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <canvas ref={cropDistributionRef}></canvas>
+              <canvas ref={cropDistributionRef}></canvas>
             </div>
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <canvas ref={soilMetricsRef}></canvas>
+              <canvas ref={soilMetricsRef}></canvas>
             </div>
-            </div>
+          </div>
 
-            {/* Charts Row 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          {/* Charts Row 2 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <canvas ref={climateDataRef}></canvas>
+              <canvas ref={climateDataRef}></canvas>
             </div>
             <div className={`rounded-lg shadow-md p-4 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-                <canvas ref={performanceRef}></canvas>
+              <canvas ref={performanceRef}></canvas>
             </div>
-            </div>
+          </div>
 
-            {/* Farm Recommendations */}
-            <div className={`rounded-lg shadow-md mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
+          {/* Farm Recommendations */}
+          <div className={`rounded-lg shadow-md mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
             <div className={`px-4 py-3 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <h3 className="text-lg font-medium">Recommendations</h3>
+              <h3 className="text-lg font-medium">Recommendations</h3>
             </div>
             <div className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                    <h4 className="font-medium mb-2">Soil Improvement</h4>
-                    <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
+                  <h4 className="font-medium mb-2">Soil Improvement</h4>
+                  <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
                     Add lime to increase soil pH by 0.2 points for optimal crop growth.
-                    </p>
+                  </p>
                 </div>
                 <div>
-                    <h4 className="font-medium mb-2">Crop Rotation</h4>
-                    <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
+                  <h4 className="font-medium mb-2">Crop Rotation</h4>
+                  <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
                     Consider adding pulses next season to naturally improve nitrogen levels.
-                    </p>
+                  </p>
                 </div>
                 <div>
-                    <h4 className="font-medium mb-2">Water Management</h4>
-                    <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
+                  <h4 className="font-medium mb-2">Water Management</h4>
+                  <p className={darkMode ? "text-gray-300" : "text-gray-600"}>
                     Install drip irrigation to improve water efficiency by up to 30%.
-                    </p>
+                  </p>
                 </div>
-                </div>
+              </div>
             </div>
-            </div>
+          </div>
 
-            {/* Weather Forecast (Additional Section) */}
-            <div className={`rounded-lg shadow-md mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
+          {/* Weather Forecast (Additional Section) */}
+          <div className={`rounded-lg shadow-md mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
             <div className={`px-4 py-3 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
-                <h3 className="text-lg font-medium">7-Day Weather Forecast</h3>
+              <h3 className="text-lg font-medium">7-Day Weather Forecast</h3>
             </div>
             <div className="p-4">
-                <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-2">
                 {[...Array(7)].map((_, i) => (
-                    <div key={i} className="flex flex-col items-center">
+                  <div key={i} className="flex flex-col items-center">
                     <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-                        {new Date(Date.now() + i * 86400000).toLocaleDateString('en-US', { weekday: 'short' })}
+                      {new Date(Date.now() + i * 86400000).toLocaleDateString('en-US', { weekday: 'short' })}
                     </span>
                     <img 
-                        src={`/icons/weather/${i === 0 ? 'sunny' : i === 1 ? 'cloudy' : i === 2 ? 'rainy' : 'partly-cloudy'}.svg`} 
-                        alt="Weather" 
-                        className="w-8 h-8 my-2"
+                      src={`/icons/weather/${i === 0 ? 'sunny' : i === 1 ? 'cloudy' : i === 2 ? 'rainy' : 'partly-cloudy'}.svg`} 
+                      alt="Weather" 
+                      className="w-8 h-8 my-2"
                     />
                     <span className="font-medium">{Math.round(25 + Math.sin(i) * 4)}°C</span>
-                    </div>
+                  </div>
                 ))}
-                </div>
+              </div>
             </div>
-            </div>
+          </div>
         </div>
-        </div>
+      </div>
     </>
   );
 }

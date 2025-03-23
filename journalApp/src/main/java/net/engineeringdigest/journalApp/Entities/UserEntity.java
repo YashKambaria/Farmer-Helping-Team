@@ -30,7 +30,6 @@ public class UserEntity {
 	private List<String> roles;
 	private String OTP;
 	private Instant otpExpiryTime;
-//	private List<Complains> history=new ArrayList<>();
 	private boolean isEmailVerified;
 	private boolean isPhoneVerified;
 	
@@ -48,5 +47,6 @@ public class UserEntity {
 	private int landQualityScore;
 	private float pastRainfall;
 	private float avgTemperature;
+	private boolean isCreditScoreVerified;
 	private float creditScore;
 }

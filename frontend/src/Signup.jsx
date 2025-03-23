@@ -1,121 +1,451 @@
-import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import axios from "axios";
-import { AuthContext } from "./AuthContext";
+import { motion } from "framer-motion";
+import { Navigate,useNavigate } from "react-router-dom";
 
-export default function Signup() {
+
+export default function Signup({ darkMode = false }) {
     const navigate = useNavigate();
-    const { setIsLoggedIn } = useContext(AuthContext);
-
+    // State for form fields
     const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [phoneNo, setPhoneNumber] = useState("");
-    const [carModel, setCarModel] = useState("");
-    const [plateNo, setPlateNo] = useState("");
-    const [vehicles, setVehicles] = useState([]);
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
-    const [error, setError] = useState("");
-
+    const [email, setEmail] = useState("");
+    const [phoneNo, setPhoneNumber] = useState("");
+    const [year, setYear] = useState("");
+    const [country, setCountry] = useState("");
+    const [region, setRegion] = useState("");
+    const [landSize, setLandSize] = useState("");
+    const [soilType, setSoilType] = useState("");
+    const [pastYield, setPastYield] = useState("");
+    const [cropTypes, setCropTypes] = useState("");
+    const [annualIncome, setAnnualIncome] = useState("");
+    
+    // Step navigation
+    const [currentStep, setCurrentStep] = useState(1);
+    const totalSteps = 3;
+    
+    // Error handling
+    const [errors, setErrors] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Dark mode classes
+    const bgClass = darkMode 
+        ? "bg-gray-900 text-white"
+        : "bg-white text-gray-800";
+        
+    const cardBgClass = darkMode 
+        ? "bg-gray-800 shadow-xl" 
+        : "bg-white shadow-xl";
+        
+    const labelClass = darkMode 
+        ? "text-gray-300" 
+        : "text-gray-700";
+        
+    const inputBgClass = darkMode 
+        ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-green-500 focus:border-green-500" 
+        : "bg-white border-gray-300 text-gray-900 focus:ring-green-500 focus:border-green-500";
+        
+    const iconClass = darkMode 
+        ? "text-gray-400" 
+        : "text-gray-500";
+        
+    const headerBgClass = darkMode 
+        ? "bg-green-700" 
+        : "bg-green-600";
+        
+    const buttonSecondaryClass = darkMode 
+        ? "border-gray-600 text-gray-300 hover:bg-gray-700" 
+        : "border-gray-300 text-gray-700 hover:bg-gray-50";
+        
+    const progressBgClass = darkMode 
+        ? "bg-gray-700" 
+        : "bg-gray-200";
+        
+    const stepInactiveClass = darkMode 
+        ? "bg-gray-700 text-gray-400" 
+        : "bg-gray-200 text-gray-600";
+    
+    const headingClass = darkMode
+        ? "text-white"
+        : "text-gray-800";
+    
+    const nextStep = () => {
+        if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
+    };
+    
+    const prevStep = () => {
+        if (currentStep > 1) setCurrentStep(currentStep - 1);
+    };
 
     const handleSignup = async () => {
-        setError("");
-
-        // Regex patterns
-        const emailRegex = /^\S+@\S+\.\S+$/;
-        const phoneRegex = /^(?:\+?\d{1,3}[-.\s]?)?[6-9]\d{9}$/;
-        const carModelRegex = /^[a-zA-Z0-9 ]+$/;
-        const carPlateRegex = /^[A-Z]{2}\s\d{1,2}[A-Z]{1,3}\d{4}$/;
-
-        if (!username || !email || !phoneNo || !carModel || !plateNo || !password || !confirmPassword) {
-            setError("All fields are required!");
-            return;
-        }
-
-        if (!emailRegex.test(email)) {
-            setError("Invalid email format!");
-            return;
-        }
-
-        if (!phoneRegex.test(phoneNo)) {
-            setError("Invalid phone number!");
-            return;
-        }
-
-        if (!carModelRegex.test(carModel)) {
-            setError("Invalid car model!");
-            return;
-        }
-
-        if (!carPlateRegex.test(plateNo.toUpperCase())) {
-            setError("Invalid car number plate format!");
-            return;
-        }
-
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters long!");
-            return;
-        }
-
         if (password !== confirmPassword) {
-            setError("Passwords do not match!");
+            setErrors({...errors, password: "Passwords do not match"});
             return;
         }
-        const newVehicles = [{ carModel: carModel, plateNo: plateNo }];
+        
+        setIsLoading(true);
+        
+        const userData = {
+            name: username,
+            password,
+            email,
+            phoneNo,
+            year,
+            country,
+            region,
+            landSize: parseFloat(landSize),
+            soilType,
+            pastYield: parseFloat(pastYield),
+            cropTypes,
+            annualIncome: parseInt(annualIncome),
+            roles: ["ROLE_USER"] // Default role for new users
+        };
 
         try {
-            const response = await axios.post(
-                "http://localhost:8080/public/sign-up",
-                { username, email, phoneNo, vehicles: newVehicles, password },
-                { headers: { "Content-Type": "application/json" }, responseType: "text" }
-            );
-
-            if (response.status === 201) {
-                alert("Signup successful! Please login.");
-                navigate("/login");
-            } else {
-                setError("Signup failed. Try again.");
-            }
+            const response = await axios.post("http://localhost:8080/public/sign-up", userData);
+            alert("Account created successfully!");
+            navigate('/login');
         } catch (err) {
-            setError(err.response?.data || "Signup failed. Try again.");
+            setErrors({...errors, submit: "Signup failed. Please try again."});
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const renderFormStep = () => {
+        switch(currentStep) {
+            case 1:
+                return (
+                    <div className="space-y-4">
+                        <h2 className={`text-2xl font-bold mb-6 ${headingClass}`}>Basic Information</h2>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Username</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-user"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Choose a username"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Email</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-envelope"></i>
+                                </span>
+                                <input 
+                                    type="email" 
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Your email address"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Phone Number</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-phone"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    value={phoneNo}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Your phone number"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Password</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-lock"></i>
+                                </span>
+                                <input 
+                                    type="password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Create a strong password"
+                                />
+                            </div>
+                            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Confirm Password</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-lock"></i>
+                                </span>
+                                <input 
+                                    type="password" 
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Confirm your password"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            case 2:
+                return (
+                    <div className="space-y-4">
+                        <h2 className={`text-2xl font-bold mb-6 ${headingClass}`}>Farm Location</h2>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Country</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-globe"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    value={country}
+                                    onChange={(e) => setCountry(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Country"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Region</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-map-marker-alt"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    value={region}
+                                    onChange={(e) => setRegion(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Region/State/Province"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Year Established</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-calendar"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    value={year}
+                                    onChange={(e) => setYear(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Year farm was established"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            case 3:
+                return (
+                    <div className="space-y-4">
+                        <h2 className={`text-2xl font-bold mb-6 ${headingClass}`}>Farm Details</h2>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Land Size (acres)</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-ruler-combined"></i>
+                                </span>
+                                <input 
+                                    type="number" 
+                                    step="0.1"
+                                    value={landSize}
+                                    onChange={(e) => setLandSize(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="Land size in acres"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Soil Type</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-mountain"></i>
+                                </span>
+                                <select 
+                                    value={soilType}
+                                    onChange={(e) => setSoilType(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                >
+                                    <option value="">Select soil type</option>
+                                    <option value="clay">Clay</option>
+                                    <option value="sandy">Sandy</option>
+                                    <option value="loam">Loam</option>
+                                    <option value="silt">Silt</option>
+                                    <option value="peaty">Peaty</option>
+                                    <option value="chalky">Chalky</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div className="relative">
+                            <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Crop Types</label>
+                            <div className="flex items-center">
+                                <span className={`absolute left-3 ${iconClass}`}>
+                                    <i className="fas fa-seedling"></i>
+                                </span>
+                                <input 
+                                    type="text" 
+                                    value={cropTypes}
+                                    onChange={(e) => setCropTypes(e.target.value)}
+                                    className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                    placeholder="e.g. Corn, Wheat, Rice"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="relative">
+                                <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Past Yield (tons/acre)</label>
+                                <div className="flex items-center">
+                                    <span className={`absolute left-3 ${iconClass}`}>
+                                        <i className="fas fa-chart-line"></i>
+                                    </span>
+                                    <input 
+                                        type="number" 
+                                        step="0.1"
+                                        value={pastYield}
+                                        onChange={(e) => setPastYield(e.target.value)}
+                                        className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                        placeholder="Average past yield"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="relative">
+                                <label className={`text-sm font-medium mb-1 block ${labelClass}`}>Annual Income</label>
+                                <div className="flex items-center">
+                                    <span className={`absolute left-3 ${iconClass}`}>
+                                        <i className="fas fa-dollar-sign"></i>
+                                    </span>
+                                    <input 
+                                        type="number" 
+                                        value={annualIncome}
+                                        onChange={(e) => setAnnualIncome(e.target.value)}
+                                        className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
+                                        placeholder="Annual farm income"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6">
+                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} mb-4`}>
+                                By creating an account, you agree to our Terms of Service and Privacy Policy.
+                            </p>
+                            {errors.submit && <p className="text-red-500 text-sm mb-4">{errors.submit}</p>}
+                        </div>
+                    </div>
+                );
+                
+            default:
+                return null;
         }
     };
 
     return (
-        <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600">
-            <div className="p-8 bg-white shadow-2xl rounded-lg w-96">
-                <h2 className="text-3xl font-bold text-center mb-6 text-blue-600">Sign Up</h2>
-
-                {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
-
-                {[
-                    { icon: "fa-user", type: "text", placeholder: "Username", state: username, setState: setUsername },
-                    { icon: "fa-envelope", type: "email", placeholder: "Email ID", state: email, setState: setEmail },
-                    { icon: "fa-phone", type: "text", placeholder: "Phone Number", state: phoneNo, setState: setPhoneNumber },
-                    { icon: "fa-car", type: "text", placeholder: "Car Model", state: carModel, setState: setCarModel },
-                    { icon: "fa-id-card", type: "text", placeholder: "Car Number Plate", state: plateNo, setState: setPlateNo },
-                    { icon: "fa-lock", type: "password", placeholder: "Password", state: password, setState: setPassword },
-                    { icon: "fa-lock", type: "password", placeholder: "Confirm Password", state: confirmPassword, setState: setConfirmPassword }
-                ].map(({ icon, type, placeholder, state, setState }, index) => (
-                    <div key={index} className="relative mb-3">
-                        <i className={`fas ${icon} absolute left-3 top-3 text-gray-500`}></i>
-                        <input
-                            type={type}
-                            placeholder={placeholder}
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            className="block pl-10 border p-2 w-full rounded-md focus:ring-2 focus:ring-blue-400 text-black"
-                        />
+        <div className={`min-h-screen flex items-center justify-center ${darkMode ? "bg-gradient-to-br from-gray-900 to-gray-800" : "bg-gradient-to-br from-green-50 to-green-100"} py-12 px-4 sm:px-6 lg:px-8`}>
+            <div className={`max-w-md w-full rounded-xl overflow-hidden ${cardBgClass}`}>
+                <div className={`${headerBgClass} py-4 px-6`}>
+                    <h1 className="text-2xl font-bold text-white text-center">Create Farmer Account</h1>
+                </div>
+                
+                <div className="p-6">
+                    {/* Progress bar */}
+                    <div className="mb-8">
+                        <div className="flex justify-between mb-1">
+                            {[1, 2, 3].map(step => (
+                                <button 
+                                    key={step}
+                                    onClick={() => setCurrentStep(step)}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors duration-300
+                                        ${currentStep >= step ? 'bg-green-600 text-white' : stepInactiveClass}`}
+                                >
+                                    {step}
+                                </button>
+                            ))}
+                        </div>
+                        <div className={`h-2 ${progressBgClass} rounded-full`}>
+                            <div 
+                                className="h-full bg-green-600 rounded-full transition-all duration-300"
+                                style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+                            ></div>
+                        </div>
                     </div>
-                ))}
-
-                <button onClick={handleSignup} className="bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600 transition-all">
-                    Sign Up
-                </button>
-
-                <p className="text-center text-sm mt-4 text-gray-600">
-                    Already have an account? <Link to="/login" className="text-blue-500 hover:underline cursor-pointer">Login</Link>
-                </p>
+                    
+                    {/* Form content */}
+                    <motion.div
+                        key={currentStep}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        {renderFormStep()}
+                    </motion.div>
+                    
+                    {/* Navigation buttons */}
+                    <div className="mt-8 flex justify-between">
+                        <button
+                            onClick={prevStep}
+                            className={`px-4 py-2 rounded-lg border transition-colors
+                                ${buttonSecondaryClass}
+                                ${currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={currentStep === 1}
+                        >
+                            Previous
+                        </button>
+                        
+                        {currentStep < totalSteps ? (
+                            <button
+                                onClick={nextStep}
+                                className={`px-4 py-2 ${darkMode ? 'bg-green-700' : 'bg-green-600'} text-white rounded-lg shadow hover:${darkMode ? 'bg-green-800' : 'bg-green-700'} transition-colors`}
+                            >
+                                Next
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleSignup}
+                                className={`px-4 py-2 ${darkMode ? 'bg-green-700' : 'bg-green-600'} text-white rounded-lg shadow hover:${darkMode ? 'bg-green-800' : 'bg-green-700'} transition-colors flex items-center`}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        Creating Account...
+                                    </>
+                                ) : "Create Account"}
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

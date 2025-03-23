@@ -7,7 +7,7 @@ export default function Login() {
     const { accessReason } = useContext(AuthContext);
     const navigate = useNavigate();
     const { setIsLoggedIn } = useContext(AuthContext);
-    const [username, setUsername] = useState("");
+    const [name, setName] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
@@ -32,7 +32,7 @@ export default function Login() {
         setError("");
 
         // Basic validation
-        if (!username || !password) {
+        if (!name || !password) {
             setError("Username and password are required!");
             return;
         }
@@ -40,7 +40,7 @@ export default function Login() {
         try {
             const response = await axios.post(
                 "http://localhost:8080/public/login",
-                { username, password },
+                { name, password },
                 {
                     headers: { "Content-Type": "application/json" },
                     responseType: "text",
@@ -75,8 +75,8 @@ export default function Login() {
                     <input
                         type="text"
                         placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         className="block border p-2 w-full rounded-md mb-2 focus:ring-2 focus:ring-blue-400 text-black"
                     />
 
