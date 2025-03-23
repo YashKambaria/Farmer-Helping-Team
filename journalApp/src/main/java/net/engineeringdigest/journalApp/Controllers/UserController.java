@@ -200,6 +200,7 @@ public class UserController {
 			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
 		}
 	}
+	//USER Verification ended
 	
 	@PostMapping("/getCreditScore")
 	public ResponseEntity<?> getCreditScore() {
@@ -281,7 +282,7 @@ public class UserController {
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
-	//USER Verification ended
+
 	
 	
 }

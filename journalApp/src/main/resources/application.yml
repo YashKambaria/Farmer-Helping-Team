@@ -8,6 +8,7 @@ spring:
     mongodb:
       uri: ${MONGO_URI}
       database: DivineCoders
+      auto-index-creation: true
   application:
     name: Backend
   mail:
