@@ -138,7 +138,7 @@ export default function General({ darkMode }) {
                   className="relative mb-4"
                 >
                   <img 
-                    src={userData?.avatar || ''} 
+                    src={`/farmer.jpg` || ''} 
                     alt={userData?.name || 'User'}
                     className="rounded-full w-32 h-32 object-cover border-4 border-green-500"
                   />

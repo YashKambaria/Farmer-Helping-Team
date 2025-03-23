@@ -9,6 +9,7 @@ import Profile from "./Profile";
 import ProtectedRoute from "./ProtectedRoute";
 import Signup from "./Signup";
 import Farmer from "./Farmer";
+import Chatbot from "./Chatbot";
 
 export default function App() {
     const [darkMode, setDarkMode] = useState(false);
@@ -45,7 +46,7 @@ export default function App() {
                                     />
                                     <Route 
                                         path="/chatai" 
-                                        element={<ProtectedRoute><Profile darkMode={darkMode} /></ProtectedRoute>} 
+                                        element={<ProtectedRoute><Chatbot darkMode={darkMode} /></ProtectedRoute>} 
                                     />
 
                                     <Route path="*" element={<h1 className="text-center text-2xl mt-10">404 - Page Not Found</h1>} />

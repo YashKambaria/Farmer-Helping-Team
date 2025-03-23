@@ -259,7 +259,7 @@ export default function Analytics({ darkMode }) {
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               <div className="flex-shrink-0">
                 <img
-                  src={farmerData.avatar}
+                  src={`/farmer.jpg`}
                   alt={farmerData.name}
                   className="rounded-full h-24 w-24 object-cover border-2 border-gray-300"
                 />
