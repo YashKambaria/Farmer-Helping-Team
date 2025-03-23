@@ -62,8 +62,8 @@ export default function Navbar({ darkMode, setDarkMode }) {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo */}
         <Link to={"/"} className="text-xl font-bold">
-          <i className="fa-solid fa-dna mr-2 text-2xl"></i>
-          Project Name
+          <i className="fa-solid fa-seedling mr-2 text-2xl"></i>
+          Crop Finance Pro
         </Link>
 
         {/* Search Bar */}
@@ -91,9 +91,9 @@ export default function Navbar({ darkMode, setDarkMode }) {
               <Link to={`/`} className="hover:text-blue-400 cursor-pointer">
                 Home
               </Link>
-              <Link to={`/service`} className="hover:text-blue-400 cursor-pointer">
+              {/* <Link to={`/service`} className="hover:text-blue-400 cursor-pointer">
                 Service
-              </Link>
+              </Link> */}
               <Link to={`/farmer`} className="hover:text-blue-400 cursor-pointer">
                 Farmer
               </Link>

@@ -10,10 +10,10 @@ export default function HomeCard({ setImageLeft, darkMode, card_image, card_cont
     console.log(card_content);
 
     let icons = {
-        message: (<i className="fa-regular fa-message fa-bounce" style={card_icon_style}></i>),
-        call: (<i className="fa-solid fa-phone-volume fa-shake" style={card_icon_style}></i>),
-        location: (<i className="fa-solid fa-location-dot fa-bounce" style={card_icon_style}></i>),
-        mail: (<i className="fa-regular fa-envelope fa-beat" style={card_icon_style}></i>),
+        'hand-holding-usd': (<i className="fa-regular hand-holding-usd" style={card_icon_style}></i>),
+        'shield-alt': (<i className="fa-solid shield-alt" style={card_icon_style}></i>),
+        'user-check': (<i className="fa-solid user-check" style={card_icon_style}></i>),
+        'chart-line': (<i className="fa-regular chart-line" style={card_icon_style}></i>),
     };
 
     return setImageLeft ? (
