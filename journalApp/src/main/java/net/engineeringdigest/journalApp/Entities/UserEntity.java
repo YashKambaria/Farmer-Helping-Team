@@ -33,6 +33,7 @@ public class UserEntity {
 	private boolean isEmailVerified;
 	private boolean isPhoneVerified;
 	
+	private boolean isLoanApproved;
 	private String year;
 	private String country;
 	private String region;
@@ -49,4 +50,5 @@ public class UserEntity {
 	private float avgTemperature;
 	private boolean isCreditScoreVerified;
 	private float creditScore;
+	private List<String> history=new ArrayList<>();
 }
