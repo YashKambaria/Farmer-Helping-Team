@@ -2,9 +2,11 @@ package net.engineeringdigest.journalApp.Controllers;
 
 
 import lombok.extern.slf4j.Slf4j;
+
 import net.engineeringdigest.journalApp.Entities.BankEntity;
 import net.engineeringdigest.journalApp.Entities.UserEntity;
 import net.engineeringdigest.journalApp.Repositories.BankRepositary;
+
 import net.engineeringdigest.journalApp.Services.BankService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ public class BankController {
 	@Autowired
 	private BankService bankService;
 
+
 	@Autowired
 	private BankRepositary bankRepositary;
 
@@ -38,6 +41,7 @@ public class BankController {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		}
 	}
+
 	
 	@GetMapping("/getAllFarmers")
 	public ResponseEntity<?> getAllFarmers(){
