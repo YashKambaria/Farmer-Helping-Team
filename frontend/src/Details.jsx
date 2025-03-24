@@ -23,7 +23,7 @@ export default function Details({ darkMode }) {
     const fetchUserData = async () => {
       const token = localStorage.getItem("token"); // Get JWT token
       try {
-        const response = await fetch("http://localhost:8080/user/getUser", {
+        const response = await fetch(localStorage.getItem("userType") === "farmer" ? 'http://localhost:8080/user/getUser' : "http://localhost:8080/Bank/getBankInfo", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -110,7 +110,7 @@ export default function Details({ darkMode }) {
           throw new Error("Failed to refresh token after username update");
         }
         const newToken = await newTokenResponse.text();
-        console.log("new token", newToken);
+        // console.log("new token", newToken);
         localStorage.setItem("token", newToken);
         originalUsernameRef.current = updatedData.name;
       }
@@ -180,7 +180,7 @@ export default function Details({ darkMode }) {
         body: JSON.stringify(body),
       });
       const result = await response.text();
-      console.log(JSON.stringify(response));
+      // console.log(JSON.stringify(response));
       if (response.ok) {
         alert(result);
         if (verifyingField === "email") {

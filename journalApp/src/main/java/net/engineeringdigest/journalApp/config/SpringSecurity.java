@@ -1,5 +1,6 @@
 package net.engineeringdigest.journalApp.config;
 
+import net.engineeringdigest.journalApp.Services.BankDetailsServiceImpl;
 import net.engineeringdigest.journalApp.Services.UserDetailServiceImpl;
 import net.engineeringdigest.journalApp.filters.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
 	
 	@Autowired
 	private UserDetailServiceImpl userDetailsService;
+
+	@Autowired
+	private BankDetailsServiceImpl bankDetailsService;
 	
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
@@ -39,9 +43,10 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 				.and()
 				.authorizeRequests()
-				.antMatchers("/user/**","/userServices/**").authenticated()
-				.antMatchers("/Bank/**").hasRole("BANK")
-				.anyRequest().permitAll()
+				.antMatchers("/public/**").permitAll()
+				.antMatchers("/user/**").hasRole("User")
+				.antMatchers("/bank/**").hasRole("BANK")
+				.anyRequest().authenticated()
 				.and()
 				.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 	}
@@ -49,6 +54,7 @@ public class SpringSecurity extends WebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+		auth.userDetailsService(bankDetailsService).passwordEncoder(passwordEncoder());
 	}
 	
 	@Bean

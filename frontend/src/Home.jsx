@@ -1,10 +1,4 @@
-import React, { useContext, useEffect } from "react";
-import { AuthContext } from "./AuthContext";
 import HomeCard from "./HomeCard";
-import chatting_image from "./assets/chatting.svg"
-import calling_image from "./assets/calling.svg"
-import location_image from "./assets/location.svg"
-import mail_image from "./assets/mail.svg"
 
 export default function Home({ darkMode }) {
 
@@ -42,28 +36,28 @@ export default function Home({ darkMode }) {
                 <HomeCard 
                 setImageLeft = {true}
                 darkMode = { darkMode }
-                card_image = { chatting_image }
+                card_image = { 'home1.png' }
                 card_content = { card_content1 }
                 card_head = { card_head1 }
                 card_icon = { card_icon[0] } />
                 <HomeCard
                 setImageLeft = {false}
                 darkMode = { darkMode }
-                card_image = { calling_image }
+                card_image = { 'home2.png' }
                 card_content = { card_content2 }
                 card_head = { card_head2 }
                 card_icon = { card_icon[1] } />
                 <HomeCard
                 setImageLeft = {true}
                 darkMode = { darkMode }
-                card_image = { location_image }
+                card_image = { 'home3.png' }
                 card_content = { card_content3 }
                 card_head = { card_head3 }
                 card_icon = { card_icon[2] } />
                 <HomeCard
                 setImageLeft = {false}
                 darkMode = { darkMode }
-                card_image = { mail_image }
+                card_image = { 'home4.png' }
                 card_content = { card_content4 }
                 card_head = { card_head4 }
                 card_icon = { card_icon[3] } />

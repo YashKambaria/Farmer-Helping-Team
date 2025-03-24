@@ -46,6 +46,7 @@ export default function App() {
                                     />
                                     <Route 
                                         path="/chatai" 
+                                        // element={<ProtectedRoute><Chatbot darkMode={darkMode} /></ProtectedRoute>} 
                                         element={<ProtectedRoute><Chatbot darkMode={darkMode} /></ProtectedRoute>} 
                                     />
 

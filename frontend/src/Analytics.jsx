@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 import axios from "axios";
+import { CloudRain, Loader } from "lucide-react";
+
+const fahrenheitToCelsius = (fahrenheit) => ((fahrenheit - 32) * 5) / 9;
+const weatherImages = ["sunny", "cloudy", "rainy", "partly-cloudy"];
 
 export default function Analytics({ darkMode }) {
   // Chart references
@@ -8,6 +12,12 @@ export default function Analytics({ darkMode }) {
   const soilMetricsRef = useRef(null);
   const climateDataRef = useRef(null);
   const performanceRef = useRef(null);
+  
+  // Weather state
+  const [weatherData, setWeatherData] = useState([]);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(true);
+  const [weatherError, setWeatherError] = useState(null);
+  const [userCity, setUserCity] = useState('');
 
   // Add state for loading and error
   const [loading, setLoading] = useState(true);
@@ -34,7 +44,70 @@ export default function Analytics({ darkMode }) {
     creditScore: 750
   });
 
-  // Fetch user data from backend
+  // Get cached weather data
+  const getCachedWeatherData = () => {
+    const cachedData = localStorage.getItem('weatherData');
+    const cacheTimestamp = localStorage.getItem('weatherCacheTime');
+    const cachedCity = localStorage.getItem('weatherCity');
+    
+    if (cachedData && cacheTimestamp && cachedCity) {
+      const currentDate = new Date().toDateString();
+      const cachedDate = new Date(parseInt(cacheTimestamp)).toDateString();
+      
+      // Check if the cached data is from the same day and same city
+      if (currentDate === cachedDate && cachedCity === userCity) {
+        return JSON.parse(cachedData);
+      }
+    }
+    
+    return null;
+  };
+
+  // Get user's location
+  useEffect(() => {
+    const getUserLocation = async () => {
+      // First try to get the region/city from farmer data
+      if (farmerData && farmerData.region) {
+        setUserCity(farmerData.region);
+        return;
+      }
+      
+      // Otherwise try to get location using geolocation API
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords;
+              // Get the city name from coordinates using a reverse geocoding API
+              const response = await fetch(
+                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+              );
+              const data = await response.json();
+              if (data && data.city) {
+                setUserCity(data.city);
+              } else {
+                // Fallback to a default city
+                setUserCity('Ahmedabad');
+              }
+            } catch (error) {
+              console.error("Error getting city name:", error);
+              setUserCity('Ahmedabad'); // Default fallback
+            }
+          },
+          (error) => {
+            console.error("Geolocation error:", error);
+            setUserCity('Ahmedabad'); // Default fallback
+          }
+        );
+      } else {
+        setUserCity('Ahmedabad'); // Default fallback
+      }
+    };
+
+    getUserLocation();
+  }, [farmerData]);
+
+  // Fetch user data and weather data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -82,6 +155,75 @@ export default function Analytics({ darkMode }) {
     fetchUserData();
   }, []);
 
+  // Fetch weather data when userCity changes
+  useEffect(() => {
+    if (!userCity) return;
+    
+    const fetchWeatherData = async () => {
+      setIsLoadingWeather(true);
+      setWeatherError(null);
+      
+      // Check for cached data first
+      const cachedData = getCachedWeatherData();
+      if (cachedData) {
+        setWeatherData(cachedData);
+        setIsLoadingWeather(false);
+        return;
+      }
+      
+      try {
+        const dates = getNext7Dates();
+        const weatherResults = [];
+        
+        // Fetch data for each date
+        for (const date of dates) {
+          const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${userCity}/${date}?unitGroup=us&key=BTHN2PFR4DBHZBZSJGQ4GVKWN&contentType=json`;
+          
+          const response = await fetch(url);
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          const tempC = data.days && data.days[0] ? fahrenheitToCelsius(data.days[0].temp).toFixed(1) : null;
+          const condition = data.days && data.days[0] ? data.days[0].conditions : 'Unknown';
+          
+          weatherResults.push({
+            date,
+            tempC,
+            condition
+          });
+        }
+        
+        // Save in state and localStorage
+        setWeatherData(weatherResults);
+        localStorage.setItem('weatherData', JSON.stringify(weatherResults));
+        localStorage.setItem('weatherCacheTime', Date.now().toString());
+        localStorage.setItem('weatherCity', userCity);
+      } catch (error) {
+        console.error("Error fetching weather data:", error);
+        setWeatherError("Failed to load weather forecast. Please try again later.");
+      } finally {
+        setIsLoadingWeather(false);
+      }
+    };
+    
+    fetchWeatherData();
+  }, [userCity]);
+
+  const getNext7Dates = () => {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const futureDate = new Date();
+      futureDate.setDate(today.getDate() + i);
+      dates.push(futureDate.toISOString().split('T')[0]); // Formats as yyyy-mm-dd
+    }
+
+    return dates;
+  };
+
   // Assumed crop distribution (since we don't have exact percentages)
   const cropDistribution = [45, 35, 20]; // Wheat, Cotton, Chickpeas in percentages
 
@@ -92,6 +234,7 @@ export default function Analytics({ darkMode }) {
     landQuality: 7.2
   };
 
+  // Initialize charts
   useEffect(() => {
     // Don't initialize charts until loading is complete
     if (loading) return;
@@ -242,6 +385,22 @@ export default function Analytics({ darkMode }) {
     };
   }, [darkMode, farmerData, loading]);
 
+  // Get weather icon based on condition
+  const getWeatherIcon = (condition) => {
+    if (!condition) return "partly-cloudy";
+    
+    const conditionLower = condition.toLowerCase();
+    if (conditionLower.includes('rain') || conditionLower.includes('shower')) {
+      return 'rainy';
+    } else if (conditionLower.includes('cloud') || conditionLower.includes('overcast')) {
+      return 'cloudy';
+    } else if (conditionLower.includes('clear') || conditionLower.includes('sunny')) {
+      return 'sunny';
+    } else {
+      return 'partly-cloudy';
+    }
+  };
+
   if (loading) {
     return (
       <div className={`min-h-screen flex justify-center items-center ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
@@ -249,7 +408,7 @@ export default function Analytics({ darkMode }) {
       </div>
     );
   }
-
+  
   return (
     <>
       <div className={`min-h-screen w-300 ml-10 mt-16 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
@@ -274,7 +433,7 @@ export default function Analytics({ darkMode }) {
               <div className="w-full md:w-72">
                 <div className="flex justify-between mb-1">
                   <span className="font-medium">Credit Score</span>
-                  <span className="font-semibold">{farmerData.creditScore}/850</span>
+                  <span className="font-semibold">{farmerData.creditScore}/1000</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
                   <div 
@@ -364,27 +523,49 @@ export default function Analytics({ darkMode }) {
             </div>
           </div>
 
-          {/* Weather Forecast (Additional Section) */}
+          {/* Weather Forecast (Updated Section) */}
           <div className={`rounded-lg shadow-md mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-            <div className={`px-4 py-3 border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}>
-              <h3 className="text-lg font-medium">7-Day Weather Forecast</h3>
+            <div className={`px-4 py-3 border-b ${darkMode ? "border-gray-700" : "border-gray-200"} flex justify-between items-center`}>
+              <h3 className="text-lg font-medium">7-Day Weather Forecast for {userCity}</h3>
+              {isLoadingWeather && (
+                <div className="flex items-center text-sm">
+                  <Loader className="w-4 h-4 mr-1 animate-spin" />
+                  <span className={darkMode ? "text-gray-400" : "text-gray-500"}>Loading forecast...</span>
+                </div>
+              )}
             </div>
             <div className="p-4">
-              <div className="grid grid-cols-7 gap-2">
-                {[...Array(7)].map((_, i) => (
-                  <div key={i} className="flex flex-col items-center">
-                    <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
-                      {new Date(Date.now() + i * 86400000).toLocaleDateString('en-US', { weekday: 'short' })}
-                    </span>
-                    <img 
-                      src={`/icons/weather/${i === 0 ? 'sunny' : i === 1 ? 'cloudy' : i === 2 ? 'rainy' : 'partly-cloudy'}.svg`} 
-                      alt="Weather" 
-                      className="w-8 h-8 my-2"
-                    />
-                    <span className="font-medium">{Math.round(25 + Math.sin(i) * 4)}°C</span>
+              {isLoadingWeather ? (
+                <div className="flex justify-center items-center h-32">
+                  <div className="flex flex-col items-center">
+                    <CloudRain className={`w-10 h-10 ${darkMode ? "text-blue-400" : "text-blue-500"} animate-bounce`} />
+                    <p className={`mt-2 ${darkMode ? "text-gray-400" : "text-gray-600"}`}>Fetching weather data...</p>
                   </div>
-                ))}
-              </div>
+                </div>
+              ) : weatherError ? (
+                <div className="text-center p-4 text-red-500">
+                  <p>{weatherError}</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-7 gap-2">
+                  {weatherData.map((item, i) => (
+                    <div key={i} className={`flex flex-col items-center p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors`}>
+                      <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
+                        {new Date(item.date).toLocaleDateString("en-US", { weekday: "short" })}
+                      </span>
+                      <img 
+                        src={`/${getWeatherIcon(item.condition)}.png`} 
+                        alt={item.condition || "Weather"} 
+                        className="w-10 h-10 my-2 object-contain"
+                      />
+                      <span className="font-medium">{item.tempC}°C</span>
+                      <span className={`text-xs mt-1 text-center ${darkMode ? "text-gray-500" : "text-gray-600"}`}>
+                        {item.condition?.split(',')[0] || "Unknown"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

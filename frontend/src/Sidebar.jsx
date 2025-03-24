@@ -7,9 +7,20 @@ export default function Sidebar({ darkMode, userInfoType, setUserInfoType }) {
             
             <nav className="space-y-4">
                 <SidebarButton label="Profile" onClick={() => setUserInfoType('details')} darkMode={darkMode} isActive={userInfoType === 'details'} />
-                <SidebarButton label="General" onClick={() => setUserInfoType('general')} darkMode={darkMode} isActive={userInfoType === 'general'} />
-                <SidebarButton label="History" onClick={() => setUserInfoType('history')} darkMode={darkMode} isActive={userInfoType === 'history'} />
-                <SidebarButton label="Analytics" onClick={() => setUserInfoType('analytics')} darkMode={darkMode} isActive={userInfoType === 'analytics'} />
+                    {
+                        localStorage.getItem("userType") === "farmer" ? (
+                            <>
+                                <SidebarButton label="General" onClick={() => setUserInfoType('general')} darkMode={darkMode} isActive={userInfoType === 'general'} />
+                                <SidebarButton label="Analytics" onClick={() => setUserInfoType('analytics')} darkMode={darkMode} isActive={userInfoType === 'analytics'} />
+                            </>
+                        ) : (
+                            <>
+                                <SidebarButton label="Admin" onClick={() => setUserInfoType('admin')} darkMode={darkMode} isActive={userInfoType === 'admin'} />
+                            </>
+                        )
+                    }
+                {/* <SidebarButton label="General" onClick={() => setUserInfoType('general')} darkMode={darkMode} isActive={userInfoType === 'general'} /> */}
+                {/* <SidebarButton label="History" onClick={() => setUserInfoType('history')} darkMode={darkMode} isActive={userInfoType === 'history'} /> */}
             </nav>
         </div>
     );

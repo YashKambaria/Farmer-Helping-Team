@@ -7,7 +7,7 @@ export default function HomeCard({ setImageLeft, darkMode, card_image, card_cont
         fontSize: '1.5rem',
     };
 
-    console.log(card_content);
+    // console.log(card_content);
 
     let icons = {
         'hand-holding-usd': (<i className="fa-regular hand-holding-usd" style={card_icon_style}></i>),
@@ -26,7 +26,7 @@ export default function HomeCard({ setImageLeft, darkMode, card_image, card_cont
                 <img
                     src={card_image}
                     alt="Card Image"
-                    className="h-40 w-auto rounded-lg object-cover"
+                    className="h-50 w-auto rounded-lg object-cover"
                 />
             )}
             <div className="p-6">
@@ -58,7 +58,7 @@ export default function HomeCard({ setImageLeft, darkMode, card_image, card_cont
                 <img
                     src={card_image}
                     alt="Card Image"
-                    className="h-40 w-auto rounded-lg object-cover"
+                    className="h-50 w-auto rounded-lg object-cover"
                 />
             )}
             <div className="p-6">

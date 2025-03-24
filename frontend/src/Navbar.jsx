@@ -55,7 +55,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
 
   return (
     <nav
-      className={`p-4 shadow-lg w-full fixed top-0 left-0 transition-colors z-50 duration-300 ${
+      className={`p-4 h-18 flex items-center justify-center shadow-lg w-full fixed top-0 left-0 transition-colors z-50 duration-300 ${
         darkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
       }`}
     >
@@ -94,12 +94,18 @@ export default function Navbar({ darkMode, setDarkMode }) {
               {/* <Link to={`/service`} className="hover:text-blue-400 cursor-pointer">
                 Service
               </Link> */}
-              <Link to={`/farmer`} className="hover:text-blue-400 cursor-pointer">
-                Farmer
-              </Link>
-              <Link to={`/chatai`} className="hover:text-blue-400 cursor-pointer">
-                Ask AI
-              </Link>
+              {
+                localStorage.getItem("userType") === "farmer" ? (
+                  <Link to={`/chatai`} className="hover:text-blue-400 cursor-pointer">
+                    Ask AI
+                  </Link>
+                ) : (
+                  <Link to={`/farmer`} className="hover:text-blue-400 cursor-pointer">
+                    Farmer
+                  </Link>
+                )
+              }
+              
               <button
                 className="hover:text-blue-400 cursor-pointer"
                 onClick={handleLogout}
@@ -109,9 +115,9 @@ export default function Navbar({ darkMode, setDarkMode }) {
             </>
           ) : (
             <>
-              <Link to={`/service`} className="hover:text-blue-400 cursor-pointer">
+              {/* <Link to={`/service`} className="hover:text-blue-400 cursor-pointer">
                 Service
-              </Link>
+              </Link> */}
               <Link to={`/login`} className="hover:text-blue-400 cursor-pointer">
                 Login
               </Link>
