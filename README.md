@@ -129,5 +129,3 @@ Go to the original repo and open a **Pull Request**.
 | GET | `/api/farmers` | Get farmer data |
 | POST | `/api/farmers` | Add farmer data |
 
-## 🌟 License
-This proje
