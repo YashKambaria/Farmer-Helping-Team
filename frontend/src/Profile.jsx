@@ -4,6 +4,7 @@ import General from "./General";
 import History from "./History";
 import Details from "./Details";
 import Analytics from "./Analytics";
+import Admin from "./Admin";
 
 export default function Profile({ darkMode }) {
   const [userInfoType, setUserInfoType] = useState('profile');
@@ -32,6 +33,8 @@ export default function Profile({ darkMode }) {
     fetchUserData();
   }, []);
 
+  // console.log("1111111111111111111111111111111111" + userInfoType);
+
   return (
     <div
       className={`flex min-h-screen ${
@@ -52,10 +55,15 @@ export default function Profile({ darkMode }) {
         <>
             <Details darkMode={darkMode} userData={userData} />
         </>
-      ) : (
+      ) : userInfoType === 'analytics' ? (
         <>
           <Analytics darkMode={darkMode}/>
         </>
+      ) : userInfoType === 'admin' ? (
+        // <General darkMode={darkMode} userData={userData} />
+        <Admin darkMode={darkMode} />
+      ) : (
+          localStorage.getItem('userType') === 'farmer' ? <General darkMode={darkMode} userData={userData} /> : <Admin darkMode={darkMode} />
       )}
     </div>
   );

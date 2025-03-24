@@ -2,9 +2,10 @@ import { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { Navigate,useNavigate } from "react-router-dom";
+import { Link } from "lucide-react";
 
 
-export default function Signup({ darkMode = false }) {
+export default function Signup({ darkMode }) {
     const navigate = useNavigate();
     // State for form fields
     const [username, setUsername] = useState("");
@@ -116,17 +117,17 @@ export default function Signup({ darkMode = false }) {
         } else {
             // Bank/NBFCs user data - only the 3 specific fields
             userData = {
-                userType: userType,
+                
                 bankName,
                 bankCredentials,
-                loansApproved,
                 roles: ["ROLE_USER"]
             };
         }
-
+        
         try {
-            const response = await axios.post("http://localhost:8080/public/sign-up", userData);
+            const response = await axios.post(userType === 'farmer' ? "http://localhost:8080/public/sign-up" : "http://localhost:8080/public/bsign-up", userData);
             alert("Account created successfully!");
+            // console.log("hello world: " + JSON.stringify(response.data));
             navigate('/login');
         } catch (err) {
             setErrors({...errors, submit: "Signup failed. Please try again."});
@@ -439,7 +440,7 @@ export default function Signup({ darkMode = false }) {
                             <input
                                 type="number"
                                 value={loansApproved}
-                                onChange={(e) => setLoansApproved(e.target.value)}
+                                onChange={(e) => setLoansApproved([e.target.value])}
                                 className={`pl-10 pr-3 py-2 w-full border rounded-lg ${inputBgClass}`}
                                 placeholder="Number of loans approved"
                                 required
@@ -481,18 +482,18 @@ export default function Signup({ darkMode = false }) {
                                     onChange={() => setUserType("Farmer")}
                                     className="mr-2 accent-green-600"
                                 />
-                                <span>Farmer</span>
+                                <span className="text-black">Farmer</span>
                             </label>
                             <label className="flex items-center cursor-pointer">
                                 <input
                                     type="radio"
                                     name="userType"
                                     value="Bank/NBFCs"
-                                    checked={userType === "Bank/NBFCs"}
-                                    onChange={() => setUserType("Bank/NBFCs")}
+                                    checked={userType === "Bank"}
+                                    onChange={() => setUserType("Bank")}
                                     className="mr-2 accent-blue-600"
                                 />
-                                <span>Bank/NBFCs</span>
+                                <span className="text-black">Bank/NBFCs</span>
                             </label>
                         </div>
                     </div>
@@ -548,7 +549,7 @@ export default function Signup({ darkMode = false }) {
                             {currentStep < totalSteps ? (
                                 <button
                                     onClick={nextStep}
-                                    className={`px-4 py-2 ${darkMode ? 'bg-green-700' : 'bg-green-600'} text-white rounded-lg shadow hover:${darkMode ? 'bg-green-800' : 'bg-green-700'} transition-colors`}
+                                    className={`px-4 py-2 ${darkMode ? 'bg-green-700' : 'bg-green-600'} text-white rounded-lg shadow hover:${darkMode ? 'bg-green-800' : 'bg-green-700'} transition-colors cursor-pointer`}
                                 >
                                     Next
                                 </button>
@@ -590,6 +591,25 @@ export default function Signup({ darkMode = false }) {
                             </button>
                         </div>
                     )}
+                    
+                    {/* Login navigation button */}
+                    <div className="mt-6 text-center">
+                        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-2`}>
+                            Already have an account?
+                        </p>
+                        <motion.button
+                            onClick={() => navigate('/login')}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`px-4 py-2 rounded-lg border cursor-pointer ${
+                                darkMode 
+                                    ? 'border-gray-700 text-gray-300 hover:bg-gray-800' 
+                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                            } transition-colors w-full`}
+                        >
+                            Go to Login
+                        </motion.button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -43,7 +43,7 @@ const getCreditStatus = (score) => {
 };
 
 export default function General({ darkMode }) {
-  console.log("Hello world" + darkMode);
+  // console.log("Hello world" + darkMode);
   const [activeTab, setActiveTab] = useState('overview');
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,11 +58,13 @@ export default function General({ darkMode }) {
           throw new Error('No authentication token found');
         }
 
-        const response = await axios.get('http://localhost:8080/user/getUser', {
+        const response = await axios.get(localStorage.getItem("userType") === "farmer" ? 'http://localhost:8080/user/getUser' : "http://localhost:8080/Bank/getBankInfo", {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
+
+        // console.log("11111111111111111111111111111111111111111111111" + JSON.stringify(response.data));
 
         setUserData(response.data);
         setLoading(false);
@@ -79,10 +81,10 @@ export default function General({ darkMode }) {
     fetchUserData();
   }, []);
 
-  // Log darkMode changes
-  useEffect(() => {
-    console.log(darkMode);
-  }, [darkMode]);
+  // // Log darkMode changes
+  // useEffect(() => {
+  //   console.log(darkMode);
+  // }, [darkMode]);
 
   // Handle loading and error states
   if (loading) {

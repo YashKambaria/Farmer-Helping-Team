@@ -181,7 +181,7 @@ export default function Chatbot({ darkMode }) {
     };
 
     return (
-        <div className={`min-h-screen p-8 mt-16 pt-8 transition-colors duration-500 ${
+        <div className={`p-8 mt-16 top-0 pt-8 transition-colors duration-500 ${
             darkMode 
                 ? 'bg-[#0f172a]' 
                 : 'bg-[#f0f9ff]'
@@ -190,7 +190,7 @@ export default function Chatbot({ darkMode }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className={`max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[80vh] transition-all duration-300 ${
+                className={`max-w-4xl mt-18 mx-auto rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[80vh] transition-all duration-300 ${
                     darkMode 
                         ? 'bg-[#1e293b] border border-[#334155]' 
                         : 'bg-white border border-[#e2e8f0]'
