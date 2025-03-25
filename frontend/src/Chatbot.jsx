@@ -78,7 +78,7 @@ export default function Chatbot({ darkMode }) {
     useEffect(() => {
         const fetchMessages = async () => {
             try {
-                const response = await axios.get('http://localhost:5000/api/chat/getMessages');
+                const response = await axios.get('http://127.0.0.1:5000/api/chat/getMessages');
                 if (response.data.success) {
                     setMessages(response.data.messages);
                     setCompletedMessages(response.data.messages);
@@ -138,11 +138,11 @@ export default function Chatbot({ darkMode }) {
         setIsLoading(true);
 
         try {
-            await axios.post('http://localhost:5000/api/chat/saveMessage', 
+            await axios.post('http://127.0.0.1:5000/api/chat/saveMessage', 
                 { message: input, sender: 'user', language }
             );
             
-            const botResponse = await axios.post('http://localhost:5000/api/chat/generateResponse', 
+            const botResponse = await axios.post('http://127.0.0.1:5000/api/chat/generateResponse', 
                 { message: input, language }
             );
             
@@ -162,7 +162,7 @@ export default function Chatbot({ darkMode }) {
                 setCurrentTypingMessage('');
             }, botMessage.text.length * 15 + 500); // approximate typing time plus a buffer
 
-            await axios.post('http://localhost:5000/api/chat/saveMessage', 
+            await axios.post('http://127.0.0.1:5000/api/chat/saveMessage', 
                 { message: botMessage.text, sender: 'bot', language }
             );
         } catch (error) {

@@ -12,17 +12,17 @@ export default function Analytics({ darkMode }) {
   const soilMetricsRef = useRef(null);
   const climateDataRef = useRef(null);
   const performanceRef = useRef(null);
-  
+
   // Weather state
   const [weatherData, setWeatherData] = useState([]);
   const [isLoadingWeather, setIsLoadingWeather] = useState(true);
   const [weatherError, setWeatherError] = useState(null);
-  const [userCity, setUserCity] = useState('');
+  const [userCity, setUserCity] = useState("");
 
   // Add state for loading and error
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Default farmer data
   const [farmerData, setFarmerData] = useState({
     name: "Rajesh Patel",
@@ -41,44 +41,69 @@ export default function Analytics({ darkMode }) {
     landQualityScore: 8.4,
     pastRainfall: 850,
     avgTemperature: 28.5,
-    creditScore: 750
+    creditScore: 75, // Initial value set within 0-100 range
   });
+
+  // State for loading credit score
+  const [isLoadingCreditScore, setIsLoadingCreditScore] = useState(false);
+
+  // Function to fetch credit score from backend
+  const handleGetCreditScore = async () => {
+    setIsLoadingCreditScore(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found.");
+      }
+      const response = await axios.get("http://localhost:8080/user/getCreditScore", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const newCreditScore = response.data; // Assuming response.data is a number between 0-100
+      setFarmerData((prevData) => ({
+        ...prevData,
+        creditScore: newCreditScore,
+      }));
+    } catch (error) {
+      console.error("Error fetching credit score:", error);
+      alert("Failed to fetch credit score. Please try again.");
+    } finally {
+      setIsLoadingCreditScore(false);
+    }
+  };
 
   // Get cached weather data
   const getCachedWeatherData = () => {
-    const cachedData = localStorage.getItem('weatherData');
-    const cacheTimestamp = localStorage.getItem('weatherCacheTime');
-    const cachedCity = localStorage.getItem('weatherCity');
-    
+    const cachedData = localStorage.getItem("weatherData");
+    const cacheTimestamp = localStorage.getItem("weatherCacheTime");
+    const cachedCity = localStorage.getItem("weatherCity");
+
     if (cachedData && cacheTimestamp && cachedCity) {
       const currentDate = new Date().toDateString();
       const cachedDate = new Date(parseInt(cacheTimestamp)).toDateString();
-      
-      // Check if the cached data is from the same day and same city
+
       if (currentDate === cachedDate && cachedCity === userCity) {
         return JSON.parse(cachedData);
       }
     }
-    
+
     return null;
   };
 
   // Get user's location
   useEffect(() => {
     const getUserLocation = async () => {
-      // First try to get the region/city from farmer data
       if (farmerData && farmerData.region) {
         setUserCity(farmerData.region);
         return;
       }
-      
-      // Otherwise try to get location using geolocation API
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             try {
               const { latitude, longitude } = position.coords;
-              // Get the city name from coordinates using a reverse geocoding API
               const response = await fetch(
                 `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
               );
@@ -86,52 +111,44 @@ export default function Analytics({ darkMode }) {
               if (data && data.city) {
                 setUserCity(data.city);
               } else {
-                // Fallback to a default city
-                setUserCity('Ahmedabad');
+                setUserCity("Ahmedabad");
               }
             } catch (error) {
               console.error("Error getting city name:", error);
-              setUserCity('Ahmedabad'); // Default fallback
+              setUserCity("Ahmedabad");
             }
           },
           (error) => {
             console.error("Geolocation error:", error);
-            setUserCity('Ahmedabad'); // Default fallback
+            setUserCity("Ahmedabad");
           }
         );
       } else {
-        setUserCity('Ahmedabad'); // Default fallback
+        setUserCity("Ahmedabad");
       }
     };
 
     getUserLocation();
   }, [farmerData]);
 
-  // Fetch user data and weather data
+  // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Get the token from localStorage
         const token = localStorage.getItem("token");
-        
         if (!token) {
           setError("Authentication token not found. Please login again.");
           setLoading(false);
           return;
         }
-        
         const response = await axios.get("http://localhost:8080/user/getUser", {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
-        
-        // Get user data from response
         const userData = response.data;
-        
-        // Only update the farmerData if we have user data
         if (userData) {
-          setFarmerData(prevData => ({
+          setFarmerData((prevData) => ({
             ...prevData,
             name: userData.name || prevData.name,
             country: userData.country || prevData.country,
@@ -139,9 +156,11 @@ export default function Analytics({ darkMode }) {
             landSize: userData.landSize || prevData.landSize,
             soilType: userData.soilType || prevData.soilType,
             pastYield: userData.pastYield || prevData.pastYield,
-            cropTypes: userData.cropTypes ? userData.cropTypes.split(",").map(crop => crop.trim()) : prevData.cropTypes,
+            cropTypes: userData.cropTypes
+              ? userData.cropTypes.split(",").map((crop) => crop.trim())
+              : prevData.cropTypes,
             annualIncome: userData.annualIncome || prevData.annualIncome,
-            year: userData.year || prevData.year
+            year: userData.year || prevData.year,
           }));
         }
       } catch (err) {
@@ -158,48 +177,38 @@ export default function Analytics({ darkMode }) {
   // Fetch weather data when userCity changes
   useEffect(() => {
     if (!userCity) return;
-    
+
     const fetchWeatherData = async () => {
       setIsLoadingWeather(true);
       setWeatherError(null);
-      
-      // Check for cached data first
+
       const cachedData = getCachedWeatherData();
       if (cachedData) {
         setWeatherData(cachedData);
         setIsLoadingWeather(false);
         return;
       }
-      
+
       try {
         const dates = getNext7Dates();
         const weatherResults = [];
-        
-        // Fetch data for each date
+
         for (const date of dates) {
           const url = `https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${userCity}/${date}?unitGroup=us&key=BTHN2PFR4DBHZBZSJGQ4GVKWN&contentType=json`;
-          
           const response = await fetch(url);
           if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
-          
           const data = await response.json();
           const tempC = data.days && data.days[0] ? fahrenheitToCelsius(data.days[0].temp).toFixed(1) : null;
-          const condition = data.days && data.days[0] ? data.days[0].conditions : 'Unknown';
-          
-          weatherResults.push({
-            date,
-            tempC,
-            condition
-          });
+          const condition = data.days && data.days[0] ? data.days[0].conditions : "Unknown";
+          weatherResults.push({ date, tempC, condition });
         }
-        
-        // Save in state and localStorage
+
         setWeatherData(weatherResults);
-        localStorage.setItem('weatherData', JSON.stringify(weatherResults));
-        localStorage.setItem('weatherCacheTime', Date.now().toString());
-        localStorage.setItem('weatherCity', userCity);
+        localStorage.setItem("weatherData", JSON.stringify(weatherResults));
+        localStorage.setItem("weatherCacheTime", Date.now().toString());
+        localStorage.setItem("weatherCity", userCity);
       } catch (error) {
         console.error("Error fetching weather data:", error);
         setWeatherError("Failed to load weather forecast. Please try again later.");
@@ -207,176 +216,76 @@ export default function Analytics({ darkMode }) {
         setIsLoadingWeather(false);
       }
     };
-    
+
     fetchWeatherData();
   }, [userCity]);
 
   const getNext7Dates = () => {
     const dates = [];
     const today = new Date();
-    
     for (let i = 0; i < 7; i++) {
       const futureDate = new Date();
       futureDate.setDate(today.getDate() + i);
-      dates.push(futureDate.toISOString().split('T')[0]); // Formats as yyyy-mm-dd
+      dates.push(futureDate.toISOString().split("T")[0]);
     }
-
     return dates;
   };
 
-  // Assumed crop distribution (since we don't have exact percentages)
-  const cropDistribution = [45, 35, 20]; // Wheat, Cotton, Chickpeas in percentages
-
-  // For performance metrics chart - simulated data for comparison
-  const regionalAvg = {
-    yield: 1500,
-    income: 450000,
-    landQuality: 7.2
-  };
+  // Chart data
+  const cropDistribution = [45, 35, 20];
+  const regionalAvg = { yield: 1500, income: 450000, landQuality: 7.2 };
 
   // Initialize charts
   useEffect(() => {
-    // Don't initialize charts until loading is complete
     if (loading) return;
-    
-    // Theme colors based on dark mode
-    const textColor = darkMode ? '#ffffff' : '#333333';
-    const gridColor = darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
-    
-    // Set global chart options for dark mode
+
+    const textColor = darkMode ? "#ffffff" : "#333333";
+    const gridColor = darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
     Chart.defaults.color = textColor;
     Chart.defaults.borderColor = gridColor;
 
-    // 1. Crop Distribution Chart
     const cropChart = new Chart(cropDistributionRef.current, {
-      type: 'doughnut',
+      type: "doughnut",
       data: {
         labels: farmerData.cropTypes,
-        datasets: [{
-          data: cropDistribution,
-          backgroundColor: [
-            '#4CAF50', // Green for Wheat
-            '#FFC107', // Amber for Cotton
-            '#2196F3'  // Blue for Chickpeas
-          ],
-          borderWidth: 1
-        }]
+        datasets: [{ data: cropDistribution, backgroundColor: ["#4CAF50", "#FFC107", "#2196F3"], borderWidth: 1 }],
       },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
-          },
-          title: {
-            display: true,
-            text: 'Crop Distribution'
-          }
-        }
-      }
+      options: { responsive: true, plugins: { legend: { position: "bottom" }, title: { display: true, text: "Crop Distribution" } } },
     });
 
-    // 2. Soil Metrics Chart
     const soilChart = new Chart(soilMetricsRef.current, {
-      type: 'radar',
+      type: "radar",
       data: {
-        labels: ['Soil pH', 'Nitrogen Level', 'Organic Matter', 'Land Quality'],
-        datasets: [{
-          label: 'Current Farm',
-          data: [farmerData.soilPH, 6.4, 8.0, farmerData.landQualityScore],
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          pointBackgroundColor: 'rgba(75, 192, 192, 1)',
-        }, {
-          label: 'Optimal Range',
-          data: [7, 7, 7.5, 9],
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          borderColor: 'rgba(255, 99, 132, 1)',
-          pointBackgroundColor: 'rgba(255, 99, 132, 1)',
-        }]
+        labels: ["Soil pH", "Nitrogen Level", "Organic Matter", "Land Quality"],
+        datasets: [
+          { label: "Current Farm", data: [farmerData.soilPH, 6.4, 8.0, farmerData.landQualityScore], backgroundColor: "rgba(75, 192, 192, 0.2)", borderColor: "rgba(75, 192, 192, 1)", pointBackgroundColor: "rgba(75, 192, 192, 1)" },
+          { label: "Optimal Range", data: [7, 7, 7.5, 9], backgroundColor: "rgba(255, 99, 132, 0.2)", borderColor: "rgba(255, 99, 132, 1)", pointBackgroundColor: "rgba(255, 99, 132, 1)" },
+        ],
       },
-      options: {
-        scales: {
-          r: {
-            beginAtZero: true,
-            max: 10,
-            ticks: {
-              stepSize: 2
-            }
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Soil Quality Metrics'
-          }
-        }
-      }
+      options: { scales: { r: { beginAtZero: true, max: 10, ticks: { stepSize: 2 } } }, plugins: { title: { display: true, text: "Soil Quality Metrics" } } },
     });
 
-    // 3. Climate Data Chart
     const climateChart = new Chart(climateDataRef.current, {
-      type: 'bar',
+      type: "bar",
       data: {
-        labels: ['Rainfall (mm)', 'Avg Temperature (°C)'],
-        datasets: [{
-          label: farmerData.year.toString(),
-          data: [farmerData.pastRainfall, farmerData.avgTemperature],
-          backgroundColor: ['rgba(54, 162, 235, 0.5)', 'rgba(255, 159, 64, 0.5)'],
-          borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 159, 64, 1)'],
-          borderWidth: 1
-        }]
+        labels: ["Rainfall (mm)", "Avg Temperature (°C)"],
+        datasets: [{ label: farmerData.year.toString(), data: [farmerData.pastRainfall, farmerData.avgTemperature], backgroundColor: ["rgba(54, 162, 235, 0.5)", "rgba(255, 159, 64, 0.5)"], borderColor: ["rgba(54, 162, 235, 1)", "rgba(255, 159, 64, 1)"], borderWidth: 1 }],
       },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Climate Data'
-          }
-        }
-      }
+      options: { scales: { y: { beginAtZero: true } }, plugins: { title: { display: true, text: "Climate Data" } } },
     });
 
-    // 4. Performance Metrics Chart
     const performanceChart = new Chart(performanceRef.current, {
-      type: 'bar',
+      type: "bar",
       data: {
-        labels: ['Yield (kg/ha)', 'Annual Income (₹/10000)', 'Land Quality Score'],
-        datasets: [{
-          label: 'Your Farm',
-          data: [farmerData.pastYield, farmerData.annualIncome/10000, farmerData.landQualityScore],
-          backgroundColor: 'rgba(75, 192, 192, 0.5)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1
-        }, {
-          label: 'Regional Average',
-          data: [regionalAvg.yield, regionalAvg.income/10000, regionalAvg.landQuality],
-          backgroundColor: 'rgba(153, 102, 255, 0.5)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 1
-        }]
+        labels: ["Yield (kg/ha)", "Annual Income (₹/10000)", "Land Quality Score"],
+        datasets: [
+          { label: "Your Farm", data: [farmerData.pastYield, farmerData.annualIncome / 10000, farmerData.landQualityScore], backgroundColor: "rgba(75, 192, 192, 0.5)", borderColor: "rgba(75, 192, 192, 1)", borderWidth: 1 },
+          { label: "Regional Average", data: [regionalAvg.yield, regionalAvg.income / 10000, regionalAvg.landQuality], backgroundColor: "rgba(153, 102, 255, 0.5)", borderColor: "rgba(153, 102, 255, 1)", borderWidth: 1 },
+        ],
       },
-      options: {
-        scales: {
-          y: {
-            beginAtZero: true
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Performance Comparison'
-          }
-        }
-      }
+      options: { scales: { y: { beginAtZero: true } }, plugins: { title: { display: true, text: "Performance Comparison" } } },
     });
 
-    // Cleanup function
     return () => {
       cropChart.destroy();
       soilChart.destroy();
@@ -385,20 +294,14 @@ export default function Analytics({ darkMode }) {
     };
   }, [darkMode, farmerData, loading]);
 
-  // Get weather icon based on condition
+  // Get weather icon
   const getWeatherIcon = (condition) => {
     if (!condition) return "partly-cloudy";
-    
     const conditionLower = condition.toLowerCase();
-    if (conditionLower.includes('rain') || conditionLower.includes('shower')) {
-      return 'rainy';
-    } else if (conditionLower.includes('cloud') || conditionLower.includes('overcast')) {
-      return 'cloudy';
-    } else if (conditionLower.includes('clear') || conditionLower.includes('sunny')) {
-      return 'sunny';
-    } else {
-      return 'partly-cloudy';
-    }
+    if (conditionLower.includes("rain") || conditionLower.includes("shower")) return "rainy";
+    if (conditionLower.includes("cloud") || conditionLower.includes("overcast")) return "cloudy";
+    if (conditionLower.includes("clear") || conditionLower.includes("sunny")) return "sunny";
+    return "partly-cloudy";
   };
 
   if (loading) {
@@ -408,7 +311,7 @@ export default function Analytics({ darkMode }) {
       </div>
     );
   }
-  
+
   return (
     <>
       <div className={`min-h-screen w-300 ml-10 mt-16 ${darkMode ? "bg-gray-900 text-white" : "bg-gray-50 text-gray-800"}`}>
@@ -417,11 +320,7 @@ export default function Analytics({ darkMode }) {
           <div className="container mx-auto">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               <div className="flex-shrink-0">
-                <img
-                  src={`/farmer.jpg`}
-                  alt={farmerData.name}
-                  className="rounded-full h-24 w-24 object-cover border-2 border-gray-300"
-                />
+                <img src={`/farmer.jpg`} alt={farmerData.name} className="rounded-full h-24 w-24 object-cover border-2 border-gray-300" />
               </div>
               <div className="flex-grow">
                 <h2 className="text-2xl font-bold">{farmerData.name}</h2>
@@ -433,15 +332,29 @@ export default function Analytics({ darkMode }) {
               <div className="w-full md:w-72">
                 <div className="flex justify-between mb-1">
                   <span className="font-medium">Credit Score</span>
-                  <span className="font-semibold">{farmerData.creditScore}/1000</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{farmerData.creditScore}/100</span>
+                    <button
+                      onClick={handleGetCreditScore}
+                      disabled={isLoadingCreditScore}
+                      className={`px-2 py-1 text-sm rounded ${
+                        darkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
+                      } ${isLoadingCreditScore ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      {isLoadingCreditScore ? "Loading..." : "Refresh"}
+                    </button>
+                  </div>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                  <div 
+                  <div
                     className={`h-2.5 rounded-full ${
-                      farmerData.creditScore > 700 ? "bg-green-600" : 
-                      farmerData.creditScore > 600 ? "bg-yellow-500" : "bg-red-500"
+                      farmerData.creditScore > 70
+                        ? "bg-green-600"
+                        : farmerData.creditScore > 60
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
                     }`}
-                    style={{ width: `${(farmerData.creditScore / 850) * 100}%` }}
+                    style={{ width: `${farmerData.creditScore}%` }}
                   ></div>
                 </div>
               </div>
@@ -523,7 +436,7 @@ export default function Analytics({ darkMode }) {
             </div>
           </div>
 
-          {/* Weather Forecast (Updated Section) */}
+          {/* Weather Forecast */}
           <div className={`rounded-lg shadow-md mb-6 ${darkMode ? "bg-gray-800" : "bg-white"}`}>
             <div className={`px-4 py-3 border-b ${darkMode ? "border-gray-700" : "border-gray-200"} flex justify-between items-center`}>
               <h3 className="text-lg font-medium">7-Day Weather Forecast for {userCity}</h3>
@@ -553,14 +466,10 @@ export default function Analytics({ darkMode }) {
                       <span className={`text-sm ${darkMode ? "text-gray-400" : "text-gray-500"}`}>
                         {new Date(item.date).toLocaleDateString("en-US", { weekday: "short" })}
                       </span>
-                      <img 
-                        src={`/${getWeatherIcon(item.condition)}.png`} 
-                        alt={item.condition || "Weather"} 
-                        className="w-10 h-10 my-2 object-contain"
-                      />
+                      <img src={`/${getWeatherIcon(item.condition)}.png`} alt={item.condition || "Weather"} className="w-10 h-10 my-2 object-contain" />
                       <span className="font-medium">{item.tempC}°C</span>
                       <span className={`text-xs mt-1 text-center ${darkMode ? "text-gray-500" : "text-gray-600"}`}>
-                        {item.condition?.split(',')[0] || "Unknown"}
+                        {item.condition?.split(",")[0] || "Unknown"}
                       </span>
                     </div>
                   ))}

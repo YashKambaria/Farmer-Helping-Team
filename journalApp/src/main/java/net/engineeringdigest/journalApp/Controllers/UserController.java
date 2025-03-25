@@ -202,7 +202,7 @@ public class UserController {
 	}
 	//USER Verification ended
 	
-	@PostMapping("/getCreditScore")
+	@GetMapping("/getCreditScore")
 	public ResponseEntity<?> getCreditScore() {
 		try {
 			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
