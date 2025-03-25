@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 # Correct CORS configuration - don't add headers elsewhere
 CORS(app, 
-     supports_credentials=True, 
+     supports_credentials=False, 
      origins=["http://localhost:5173"],
      allow_headers=["Content-Type", "Authorization"],
      methods=["GET", "POST", "OPTIONS"])

@@ -6,7 +6,7 @@ import { Mic, MicOff, Send, Clock, Leaf, Bot, User, Loader2 } from 'lucide-react
 import ReactMarkdown from 'react-markdown';
 
 // Configure axios defaults for CORS
-axios.defaults.withCredentials = true;
+axios.defaults.withCredentials = false;
 
 // Typing effect component for AI responses
 const TypingEffect = ({ text }) => {
