@@ -72,7 +72,9 @@ export default function Analytics({ darkMode }) {
       setIsLoadingCreditScore(false);
     }
   };
-
+  useEffect(() => {
+    handleGetCreditScore();
+  }, []);
   // Get cached weather data
   const getCachedWeatherData = () => {
     const cachedData = localStorage.getItem("weatherData");
