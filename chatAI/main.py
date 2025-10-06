@@ -18,6 +18,9 @@ with open('config.json') as config_file:
 
 GROQ_API_KEY = config["GROQ_API_KEY"]
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = config["GROQ_MODEL"]
+
+print(GROQ_API_KEY)
 
 @app.route('/api/chat/getMessages', methods=['GET'])
 def get_messages():
@@ -51,7 +54,7 @@ def generate_response():
     }
     
     payload = {
-        "model": "llama3-8b-8192",
+        "model": GROQ_MODEL,
         "messages": [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message}
@@ -63,6 +66,7 @@ def generate_response():
     try:
         response = requests.post(GROQ_API_URL, headers=headers, json=payload)
         response_data = response.json()
+        print("Hello Hello, response data = ", response_data)
         
         if 'choices' in response_data and len(response_data['choices']) > 0:
             bot_response = response_data['choices'][0]['message']['content']

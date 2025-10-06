@@ -46,6 +46,7 @@ export default function Details({ darkMode }) {
         });
         setEmailVerified(data.emailVerified);
         setPhoneVerified(data.phoneVerified);
+        console.log("Fetched user data:", data);
       } catch (error) {
         localStorage.setItem("isLoggedIn","false");
         localStorage.removeItem("token");
@@ -67,61 +68,93 @@ export default function Details({ darkMode }) {
   }, []);
 
   // --- (Other functions remain unchanged) ---
+const handleUpdateUserInfo = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    localStorage.setItem("isLoggedIn", "false");
+    localStorage.removeItem("token");
+    alert("You are not logged in. Please log in again.");
+    navigate("/login");
+    return;
+  }
 
-  const handleUpdateUserInfo = async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch("http://localhost:8080/user/updateDetails", {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: userInfo.name,
-          email: userInfo.email,
-          phoneNo: userInfo.phone,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to update user information");
-      }
-      const updatedData = await response.json();
-      setUserInfo((prevUserInfo) => ({
-        ...prevUserInfo,
-        name: updatedData.name || prevUserInfo.name,
-        email: updatedData.email || prevUserInfo.email,
-        phone: updatedData.phoneNo || prevUserInfo.phone,
-      }));
-      if (
-        updatedData.name &&
-        updatedData.name !== originalUsernameRef.current
-      ) {
-        console.log("Username changed, fetching new token...");
-        const newTokenResponse = await fetch(
+  // Basic validation
+  if (!userInfo.name || !userInfo.email || !userInfo.phone) {
+    alert("Please provide name, email and phone before updating.");
+    return;
+  }
+
+  try {
+    const isFarmer = localStorage.getItem("userType") === "farmer";
+    const url = isFarmer
+      ? "http://localhost:8080/user/updateDetails"
+      : "http://localhost:8080/Bank/updateBankInfo";
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: userInfo.name,
+        email: userInfo.email,
+        phoneNo: userInfo.phone,
+      }),
+    });
+
+    if (response.status === 401) {
+      localStorage.setItem("isLoggedIn", "false");
+      localStorage.removeItem("token");
+      alert("Session expired. Please log in again.");
+      navigate("/login");
+      return;
+    }
+
+    const updatedData = await response.json();
+
+    // ✅ If username changed, immediately refresh token
+    if (
+      updatedData.name &&
+      updatedData.name !== originalUsernameRef.current
+    ) {
+      try {
+        const refreshResponse = await fetch(
           "http://localhost:8080/public/refresh-token",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: updatedData.name }),
+            // backend expects "username"
+            body: JSON.stringify({ username: updatedData.name }),
           }
         );
-        if (!newTokenResponse.ok) {
-          throw new Error("Failed to refresh token after username update");
+
+        if (refreshResponse.ok) {
+          const newToken = await refreshResponse.text();
+          localStorage.setItem("token", newToken);
+          originalUsernameRef.current = updatedData.name;
+          console.log("✅ Token refreshed successfully after username change");
+        } else {
+          console.warn("⚠️ Failed to refresh token after username update");
         }
-        const newToken = await newTokenResponse.text();
-        // console.log("new token", newToken);
-        localStorage.setItem("token", newToken);
-        originalUsernameRef.current = updatedData.name;
+      } catch (err) {
+        console.error("Error refreshing token:", err);
       }
-      setIsEditing(false);
-      // alert("User information updated successfully!");
-    } catch (error) {
-      console.error("Error updating user information:", error);
-      alert("Failed to update user details. Please try again.");
     }
-    window.location.reload(false);
-  };
+
+    setUserInfo({
+      name: updatedData.name,
+      email: updatedData.email,
+      phone: updatedData.phoneNo,
+    });
+
+    alert("User information updated successfully!");
+    setIsEditing(false);
+  } catch (error) {
+    console.error("Error updating user information:", error);
+    alert("Failed to update user details. Please try again.");
+  }
+};
 
   const handleVerify = async (field) => {
     const token = localStorage.getItem("token");

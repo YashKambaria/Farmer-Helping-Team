@@ -55,7 +55,8 @@ export default function Farmer({ darkMode }) {
                 landQualityScore: farmer.landQualityScore || 75,
                 pastRainfall: farmer.pastRainfall || "450 mm",
                 avgTemperature: farmer.avgTemperature || "30°C",
-                creditScore: farmer.creditScore || 700
+                creditScore: farmer.creditScore || 700,
+                email: farmer.email || "noemail@example.com"   
             }));
             setFarmersData(formattedData);
         } catch (err) {
@@ -73,6 +74,68 @@ export default function Farmer({ darkMode }) {
   const toggleExpand = (id) => {
     setExpandedFarmer(expandedFarmer === id ? null : id);
   };
+const handleApproveLoan = async (farmer) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Authentication token not found. Please login again.");
+      return;
+    }
+
+    // Add email if missing
+    const payload = { ...farmer, email: farmer.email || "noemail@example.com" };
+
+    // Disable button for this farmer
+    setFarmersData(prev =>
+      prev.map(f => f.id === farmer.id ? { ...f, isApproving: true } : f)
+    );
+
+    const response = await axios.post(
+      "http://localhost:8080/Bank/approveLoan",
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (response.status === 202) {
+      alert(`✅ Loan approved for ${farmer.name}`);
+      
+      // Optimistic UI update
+      setFarmersData(prev =>
+        prev.map(f =>
+          f.id === farmer.id
+            ? { ...f, loanStatus: "Approved", isApproving: false }
+            : f
+        )
+      );
+    } else {
+      alert("Unexpected response from the server.");
+      setFarmersData(prev =>
+        prev.map(f =>
+          f.id === farmer.id ? { ...f, isApproving: false } : f
+        )
+      );
+    }
+  } catch (err) {
+    console.error("Error approving loan:", err);
+    if (err.response?.status === 401) {
+      alert("Session expired. Please login again.");
+    } else {
+      alert("❌ Failed to approve loan. Please try again.");
+    }
+
+    // Re-enable button on error
+    setFarmersData(prev =>
+      prev.map(f =>
+        f.id === farmer.id ? { ...f, isApproving: false } : f
+      )
+    );
+  }
+};
 
   const filteredFarmers = farmersData.filter(farmer => 
     farmer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -203,12 +266,13 @@ export default function Farmer({ darkMode }) {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col space-y-2 w-full md:w-1/4 mt-4 md:mt-0">
-                    <button 
-                      className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg flex items-center justify-center"
-                    >
-                      <CheckCircle size={18} className="mr-2 cursor-pointer" />
-                      Approve Loan
-                    </button>
+                 <button 
+  onClick={() => handleApproveLoan(farmer)}
+  className="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg flex items-center justify-center"
+>
+  <CheckCircle size={18} className="mr-2 cursor-pointer" />
+  Approve Loan
+</button>
                     <button 
                       className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg flex items-center justify-center"
                     >
